@@ -36,21 +36,68 @@ export default function ProductsPage() {
     setIsLoggedIn(Boolean(found && found.split('=')[1] === '1'))
   }, [])
 
-  // 제품에서 카테고리 추출(중복 제거)
+  // 카테고리 목록 로드
   useEffect(() => {
-    const cats = Array.from(new Set(products.map(p => p.category).filter((c): c is string => Boolean(c))))
-    setCategories(cats)
-  }, [products])
+    fetch('/api/categories')
+      .then(res => {
+        if (!res.ok) {
+          throw new Error(`서버 오류: ${res.status}`);
+        }
+        return res.json();
+      })
+      .then(data => {
+        setCategories(data.map((cat: { id: number, name: string }) => cat.name));
+      })
+      .catch(error => {
+        console.error('Failed to load categories:', error);
+        // 카테고리 로드 실패 시 빈 배열로 설정
+        setCategories([]);
+      });
+  }, []);
 
-  const handleAddCategory = () => {
+  const handleAddCategory = async () => {
     const cat = newCategory.trim()
     if (!cat) return
     if (categories.includes(cat)) return alert('이미 존재하는 카테고리입니다.')
-    setCategories(prev => [...prev, cat])
-    setNewCategory('')
+    
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: cat })
+      })
+      
+      if (response.ok) {
+        const newCat = await response.json()
+        setCategories(prev => [...prev, newCat.name])
+        setNewCategory('')
+      } else {
+        const error = await response.json()
+        alert(error.error || '카테고리 추가 실패')
+      }
+    } catch (error) {
+      console.error('Error adding category:', error)
+      alert('카테고리 추가 실패')
+    }
   }
-  const handleDeleteCategory = (cat: string) => {
-    setCategories(prev => prev.filter(c => c !== cat))
+
+  const handleDeleteCategory = async (cat: string) => {
+    try {
+      const response = await fetch('/api/categories', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: cat })
+      })
+      
+      if (response.ok) {
+        setCategories(prev => prev.filter(c => c !== cat))
+      } else {
+        alert('카테고리 삭제 실패')
+      }
+    } catch (error) {
+      console.error('Error deleting category:', error)
+      alert('카테고리 삭제 실패')
+    }
   }
 
   const handleAddProduct = () => {
@@ -134,6 +181,7 @@ export default function ProductsPage() {
                     alt="제품 이미지"
                     width={128}
                     height={128}
+                    priority
                     className="object-cover rounded-xl border mb-2"
                   />
                   <span className="text-xs text-gray-500">이미지 변경</span>
@@ -196,7 +244,7 @@ export default function ProductsPage() {
           )}
           <div className="max-w-6xl mx-auto">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {products.map((product) => (
+              {products.map((product, index) => (
                 <div
                   key={product.id}
                   className="bg-white rounded-2xl shadow-lg overflow-hidden relative flex flex-col group transition hover:shadow-2xl"
@@ -209,6 +257,7 @@ export default function ProductsPage() {
                         src={product.image}
                         alt={product.title}
                         fill
+                        priority={index === 0}
                         sizes="(max-width: 768px) 100vw, 33vw"
                         className="object-cover w-full h-full"
                       />

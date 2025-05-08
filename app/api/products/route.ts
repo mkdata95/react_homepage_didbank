@@ -29,53 +29,86 @@ async function ensureTable() {
 }
 
 export async function GET() {
-  await ensureTable()
-  const db = await openDb()
-  const items = await db.all('SELECT * FROM products')
-  await db.close()
-  return NextResponse.json(items)
+  try {
+    await ensureTable()
+    const db = await openDb()
+    const items = await db.all('SELECT * FROM products')
+    await db.close()
+    return NextResponse.json(items)
+  } catch (error) {
+    console.error('제품 목록 조회 오류:', error);
+    return NextResponse.json(
+      { error: '제품 목록을 불러오는 중 오류가 발생했습니다' }, 
+      { status: 500 }
+    );
+  }
 }
 
 export async function POST(req: NextRequest) {
-  await ensureTable()
-  const db = await openDb()
-  const body = await req.json()
-  const id = uuidv4()
-  await db.run(
-    'INSERT INTO products (id, title, description, detail, image, category) VALUES (?, ?, ?, ?, ?, ?)',
-    id,
-    body.title,
-    body.description,
-    body.detail,
-    body.image,
-    body.category
-  )
-  await db.close()
-  return NextResponse.json({ id })
+  try {
+    await ensureTable()
+    const db = await openDb()
+    const body = await req.json()
+    const id = uuidv4()
+    await db.run(
+      'INSERT INTO products (id, title, description, detail, image, category) VALUES (?, ?, ?, ?, ?, ?)',
+      id,
+      body.title,
+      body.description,
+      body.detail,
+      body.image,
+      body.category
+    )
+    const newProduct = await db.get('SELECT * FROM products WHERE id = ?', id)
+    await db.close()
+    return NextResponse.json(newProduct)
+  } catch (error) {
+    console.error('제품 추가 오류:', error);
+    return NextResponse.json(
+      { error: '제품 추가 실패' }, 
+      { status: 500 }
+    );
+  }
 }
 
 export async function PUT(req: NextRequest) {
-  await ensureTable()
-  const db = await openDb()
-  const body = await req.json()
-  await db.run(
-    'UPDATE products SET title=?, description=?, detail=?, image=?, category=? WHERE id=?',
-    body.title,
-    body.description,
-    body.detail,
-    body.image,
-    body.category,
-    body.id
-  )
-  await db.close()
-  return NextResponse.json({ ok: true })
+  try {
+    await ensureTable()
+    const db = await openDb()
+    const body = await req.json()
+    await db.run(
+      'UPDATE products SET title=?, description=?, detail=?, image=?, category=? WHERE id=?',
+      body.title,
+      body.description,
+      body.detail,
+      body.image,
+      body.category,
+      body.id
+    )
+    await db.close()
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('제품 수정 오류:', error);
+    return NextResponse.json(
+      { error: '제품 수정 실패' }, 
+      { status: 500 }
+    );
+  }
 }
 
 export async function DELETE(req: NextRequest) {
-  await ensureTable()
-  const db = await openDb()
-  const { id } = await req.json()
-  await db.run('DELETE FROM products WHERE id=?', id)
-  await db.close()
-  return NextResponse.json({ ok: true })
+  try {
+    await ensureTable()
+    const db = await openDb()
+    const { id } = await req.json()
+    await db.run('DELETE FROM products WHERE id=?', id)
+    await db.close()
+    return NextResponse.json({ ok: true })
+  } catch (error) {
+    console.error('제품 삭제 오류:', error);
+    return NextResponse.json(
+      { error: '제품 삭제 실패' }, 
+      { status: 500 }
+    );
+  }
 } 

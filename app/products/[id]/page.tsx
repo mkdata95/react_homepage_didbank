@@ -104,8 +104,8 @@ export default function ProductDetailPage() {
                     src={editedImage || product.image || '/images/products/MSI.png'}
                     alt="제품 이미지"
                     fill
-                    sizes="(max-width: 768px) 100vw, 70vw"
                     priority
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 70vw, 800px"
                     className="object-cover w-full h-full"
                   />
                 ) : (
@@ -113,8 +113,8 @@ export default function ProductDetailPage() {
                     src={product.image || '/images/products/MSI.png'}
                     alt="제품 이미지"
                     fill
-                    sizes="(max-width: 768px) 100vw, 70vw"
                     priority
+                    sizes="(max-width: 768px) 100vw, (max-width: 1200px) 70vw, 800px"
                     className="object-cover w-full h-full"
                   />
                 )}
