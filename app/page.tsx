@@ -172,6 +172,15 @@ const ICON_LIST = [
   { name: '분석', svg: '<svg viewBox="0 0 24 24" fill="currentColor"><rect x="3" y="13" width="4" height="8"/><rect x="9" y="9" width="4" height="12"/><rect x="15" y="5" width="4" height="16"/><path d="M4 4l16 16"/></svg>' },
 ];
 
+interface PortfolioItem {
+  id: string;
+  title: string;
+  period: string;
+  overview: string;
+  image: string;
+  // 필요시 추가 필드
+}
+
 export default function Home() {
   // 관리자 로그인 여부 확인
   const [isAdmin, setIsAdmin] = useState(false)
@@ -199,7 +208,7 @@ export default function Home() {
   const [servicesSaveMsg, setServicesSaveMsg] = useState('')
   const [iconModalIdx, setIconModalIdx] = useState(-1)
   const [iconSearch, setIconSearch] = useState('')
-  const [portfolioItems, setPortfolioItems] = useState([])
+  const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
 
   useEffect(() => {
     const cookies = document.cookie.split(';').map(c => c.trim())
@@ -210,7 +219,9 @@ export default function Home() {
   useEffect(() => {
     fetch('/api/portfolio')
       .then(res => res.json())
-      .then(data => setPortfolioItems(data))
+      .then(data => {
+        if (Array.isArray(data)) setPortfolioItems(data);
+      });
   }, [])
 
   const handleHeroSave = async () => {
