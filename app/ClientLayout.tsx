@@ -4,7 +4,11 @@ import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { ReactNode, useState, useEffect } from 'react'
 
-const Footer = dynamic(() => import('./components/Footer'), { ssr: false })
+// 불필요한 리렌더링 방지를 위해 메모이제이션된 푸터 컴포넌트
+const Footer = dynamic(() => import('./components/Footer'), { 
+  ssr: false,
+  loading: () => <div className="h-32"></div> // 로딩 상태 표시
+})
 
 export default function ClientLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
@@ -50,19 +54,19 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
         <header className="fixed w-full" style={{ background: '#222831', boxShadow: '0 2px 8px 0 #393E46', borderBottom: '2px solid #393E46', zIndex: 50 }}>
           <nav className="container mx-auto px-4 py-4">
             <div className="flex justify-between items-center h-16">
-              <Link href="/" className="text-2xl font-bold" style={{ color: '#DFD0B8' }}>
+              <Link href="/" prefetch={true} className="text-2xl font-bold" style={{ color: '#DFD0B8' }}>
                 페델타
               </Link>
               <div className="hidden md:flex items-center space-x-10">
-                <Link href="/about" className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>회사소개</Link>
-                <Link href="/products" className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>주요제품</Link>
-                <Link href="/portfolio" className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>주요실적</Link>
-                <Link href="/downloads" className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>자료다운로드</Link>
-                <Link href="/location" className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>오시는길</Link>
-                <Link href="/contact" className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>문의하기</Link>
+                <Link href="/about" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>회사소개</Link>
+                <Link href="/products" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>주요제품</Link>
+                <Link href="/portfolio" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>주요실적</Link>
+                <Link href="/downloads" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>자료다운로드</Link>
+                <Link href="/location" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>오시는길</Link>
+                <Link href="/contact" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>문의하기</Link>
                 {isLoggedIn ? (
                   <div className="flex items-center space-x-4">
-                    <Link href="/admin" className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>관리자</Link>
+                    <Link href="/admin" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>관리자</Link>
                     <button
                       onClick={handleLogout}
                       className="px-4 py-2 rounded-lg border border-[#DFD0B8] text-[#DFD0B8] font-semibold hover:bg-[#DFD0B8] hover:text-[#222831] transition-colors"

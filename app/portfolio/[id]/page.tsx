@@ -56,11 +56,16 @@ interface Project {
   period: string;
   role: string;
   overview: string;
-  details: string[];
+  details: string[] | string; // 배열 또는 HTML 문자열 지원
   client: string;
   image: string;
   category: string;
-  gallery?: string[];
+  gallery?: GalleryItem[];
+}
+
+interface GalleryItem {
+  image: string;
+  caption: string;
 }
 
 export default function ProjectDetailPage({ params }: { params: { id: string } }) {
@@ -68,6 +73,7 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const [isEditing, setIsEditing] = useState(false)
   const [isLoggedIn, setIsLoggedIn] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [selectedImage, setSelectedImage] = useState<string | null>(null)
   
   // 편집 상태 관리
   const [editedTitle, setEditedTitle] = useState('')
@@ -77,7 +83,8 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   const [editedCategory, setEditedCategory] = useState('')
   const [editedOverview, setEditedOverview] = useState('')
   const [editedImage, setEditedImage] = useState('')
-  const [editedDetails, setEditedDetails] = useState<string[]>([])
+  const [editedDetails, setEditedDetails] = useState('')
+  const [editedGallery, setEditedGallery] = useState<GalleryItem[]>([])
 
   // 로그인 상태 확인
   useEffect(() => {
@@ -100,7 +107,16 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           setEditedCategory(found.category || '')
           setEditedOverview(found.overview || '')
           setEditedImage(found.image || '')
-          setEditedDetails(found.details || [])
+          
+          // details가 배열인 경우 HTML로 변환, 문자열인 경우 그대로 사용
+          if (Array.isArray(found.details)) {
+            setEditedDetails(found.details.map(detail => `<p>${detail}</p>`).join(''))
+          } else {
+            setEditedDetails(found.details || '')
+          }
+          
+          // 갤러리 설정
+          setEditedGallery(found.gallery || [])
         }
       })
   }, [params.id])
@@ -130,6 +146,51 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
       setEditedImage(optimizedImage);
     }
   }
+  
+  // 갤러리 이미지 업로드 핸들러
+  const handleGalleryImageChange = async (e: React.ChangeEvent<HTMLInputElement>, index: number) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0]
+      const optimizedImage = await resizeAndOptimizeImage(file);
+      
+      const newGallery = [...editedGallery];
+      if (newGallery[index]) {
+        newGallery[index] = {
+          ...newGallery[index],
+          image: optimizedImage
+        };
+      } else {
+        newGallery[index] = {
+          image: optimizedImage,
+          caption: ''
+        };
+      }
+      
+      setEditedGallery(newGallery);
+    }
+  }
+  
+  // 갤러리 캡션 변경 핸들러
+  const handleCaptionChange = (index: number, caption: string) => {
+    const newGallery = [...editedGallery];
+    if (newGallery[index]) {
+      newGallery[index] = {
+        ...newGallery[index],
+        caption
+      };
+    }
+    setEditedGallery(newGallery);
+  }
+  
+  // 이미지 전체화면 보기
+  const openFullscreen = (image: string) => {
+    setSelectedImage(image);
+  }
+  
+  // 전체화면 닫기
+  const closeFullscreen = () => {
+    setSelectedImage(null);
+  }
 
   // 저장 함수
   const handleSave = async () => {
@@ -146,7 +207,8 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
         category: editedCategory,
         overview: editedOverview,
         image: editedImage,
-        details: editedDetails
+        details: editedDetails, // HTML 형식으로 저장
+        gallery: editedGallery
       }
 
       const response = await fetch('/api/portfolio', {
@@ -171,13 +233,13 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
   return (
     <main className="min-h-screen pt-20 bg-gray-50">
       <div className="container mx-auto px-4 py-12">
-        <div className="max-w-4xl mx-auto space-y-12">
+        <div className="max-w-6xl mx-auto space-y-12">
           {/* 상단 카드: 이미지 + 정보 */}
           <div className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col md:flex-row">
-            {/* 이미지 (6) */}
-            <div className="md:w-3/5 w-full h-80 md:h-auto relative">
+            {/* 이미지 */}
+            <div className="md:w-[70%] w-full h-80 md:h-auto relative bg-gray-100">
               {isEditing ? (
-                <div className="relative w-full h-full flex flex-col" style={{ minHeight: 320 }}>
+                <div className="relative w-full h-full flex flex-col" style={{ minHeight: 360, aspectRatio: '16/9', maxHeight: 500 }}>
                   <Image
                     src={editedImage || '/images/projects/science-museum.jpg'}
                     alt={editedTitle}
@@ -206,23 +268,23 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
                   priority
                   sizes="(max-width: 768px) 100vw, (max-width: 1200px) 60vw, 600px"
                   className="object-cover w-full h-full"
-                  style={{ minHeight: 320 }}
+                  style={{ minHeight: 360, aspectRatio: '16/9', maxHeight: 500 }}
                 />
               )}
             </div>
-            {/* 정보 (4) */}
-            <div className="md:w-2/5 w-full flex flex-col justify-center p-8 gap-4">
+            {/* 정보 */}
+            <div className="md:w-[30%] w-full flex flex-col justify-center p-8 gap-4" style={{ minWidth: 0 }}>
               {/* 제목 */}
               {isEditing ? (
                 <input
                   type="text"
                   value={editedTitle}
                   onChange={e => setEditedTitle(e.target.value)}
-                  className="text-3xl font-bold border-b-2 border-[#948979] focus:outline-none bg-transparent mb-4"
+                  className="text-3xl font-extrabold border-b-2 border-[#948979] focus:outline-none bg-transparent mb-4"
                   placeholder="프로젝트 제목"
                 />
               ) : (
-                <h1 className="text-3xl font-bold text-gray-900 mb-4">
+                <h1 className="text-3xl font-extrabold text-[#393E46] tracking-tight mb-2">
                   {project.title}
                   <span className="block w-12 h-1 bg-[#948979] mt-2 rounded"></span>
                 </h1>
@@ -301,27 +363,125 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
             </div>
           </div>
 
-          {/* 하단 카드: 상세 설명 */}
+          {/* 갤러리 카드 */}
           <div className="bg-white rounded-2xl shadow-lg p-8">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-2xl font-bold text-gray-900">상세 설명</h2>
+              <h2 className="text-xl font-bold">프로젝트 갤러리</h2>
+            </div>
+            
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {isEditing ? (
+                // 편집 모드의 갤러리
+                Array.from({ length: 6 }).map((_, index) => (
+                  <div 
+                    key={index} 
+                    className="bg-gray-50 rounded-lg overflow-hidden border border-gray-200 flex flex-col"
+                  >
+                    <div className="relative h-80 bg-gray-100 flex items-center justify-center">
+                      {editedGallery[index]?.image ? (
+                        <div className="w-full h-full relative">
+                          <Image
+                            src={editedGallery[index].image}
+                            alt={`갤러리 이미지 ${index + 1}`}
+                            fill
+                            sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 500px"
+                            className="object-cover"
+                          />
+                          <div className="absolute inset-0 bg-black bg-opacity-30 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
+                            <label className="bg-white text-gray-800 px-4 py-2 rounded cursor-pointer hover:bg-gray-100">
+                              변경
+                              <input
+                                type="file"
+                                accept="image/*"
+                                onChange={(e) => handleGalleryImageChange(e, index)}
+                                className="hidden"
+                              />
+                            </label>
+                          </div>
+                        </div>
+                      ) : (
+                        <label className="cursor-pointer flex flex-col items-center justify-center p-4 text-center hover:bg-gray-200 transition-colors w-full h-full">
+                          <svg className="w-16 h-16 text-gray-400 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                          </svg>
+                          <span className="text-gray-500 text-lg">이미지 추가</span>
+                          <input
+                            type="file"
+                            accept="image/*"
+                            onChange={(e) => handleGalleryImageChange(e, index)}
+                            className="hidden"
+                          />
+                        </label>
+                      )}
+                    </div>
+                    
+                    <div className="p-4">
+                      <input
+                        type="text"
+                        value={editedGallery[index]?.caption || ''}
+                        onChange={(e) => handleCaptionChange(index, e.target.value)}
+                        className="w-full border rounded p-2"
+                        placeholder="이미지 설명"
+                      />
+                    </div>
+                  </div>
+                ))
+              ) : (
+                // 보기 모드의 갤러리
+                project?.gallery && project.gallery.length > 0 ? (
+                  project.gallery.map((item, index) => (
+                    <div key={index} className="bg-white rounded-lg overflow-hidden shadow-md hover:shadow-lg transition-shadow">
+                      <div 
+                        className="relative h-80 cursor-pointer"
+                        onClick={() => openFullscreen(item.image)}
+                      >
+                        <Image
+                          src={item.image}
+                          alt={item.caption || `갤러리 이미지 ${index + 1}`}
+                          fill
+                          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 500px"
+                          className="object-cover"
+                        />
+                        <div className="absolute inset-0 bg-black bg-opacity-20 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
+                          <span className="text-white bg-black bg-opacity-50 px-4 py-2 rounded-full">
+                            확대
+                          </span>
+                        </div>
+                      </div>
+                      {item.caption && (
+                        <div className="p-4">
+                          <p className="text-gray-700 text-lg">{item.caption}</p>
+                        </div>
+                      )}
+                    </div>
+                  ))
+                ) : (
+                  <div className="col-span-2 py-16 text-center text-gray-500">
+                    등록된 갤러리 이미지가 없습니다.
+                  </div>
+                )
+              )}
+            </div>
+          </div>
+
+          {/* 하단 카드: 상세 설명 */}
+          <div className="bg-white rounded-2xl shadow-lg p-8 mt-12">
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-xl font-bold">상세 설명</h2>
             </div>
             
             {isEditing ? (
               <div className="space-y-4">
-                <textarea
-                  value={editedDetails.join('\n')}
-                  onChange={(e) => setEditedDetails(e.target.value.split('\n'))}
-                  className="w-full border rounded-lg p-4 text-gray-600 min-h-[200px]"
-                  placeholder="상세 설명 (줄바꿈으로 구분)"
+                <RichTextEditor
+                  value={editedDetails}
+                  onChange={setEditedDetails}
                 />
               </div>
             ) : (
-              <div className="prose max-w-none">
-                {project.details.map((detail, index) => (
-                  <p key={index} className="text-gray-600 leading-relaxed mb-4">{detail}</p>
-                ))}
-              </div>
+              <div 
+                className="prose prose-lg max-w-none mt-4"
+                dangerouslySetInnerHTML={{ __html: typeof project.details === 'string' ? project.details : project.details.map(detail => `<p>${detail}</p>`).join('') }}
+              />
             )}
           </div>
         </div>
@@ -354,6 +514,35 @@ export default function ProjectDetailPage({ params }: { params: { id: string } }
           >
             {isSaving ? '저장 중...' : '저장'}
           </button>
+        </div>
+      )}
+
+      {/* 전체화면 이미지 모달 */}
+      {selectedImage && (
+        <div 
+          className="fixed inset-0 bg-black bg-opacity-90 z-50 flex items-center justify-center p-4"
+          onClick={closeFullscreen}
+        >
+          <div className="relative w-full max-w-6xl max-h-screen">
+            <div className="relative" style={{ maxHeight: '90vh' }}>
+              <Image
+                src={selectedImage}
+                alt="갤러리 이미지 전체보기"
+                width={1920}
+                height={1080}
+                className="object-contain mx-auto max-h-[90vh]"
+              />
+            </div>
+            <button
+              onClick={closeFullscreen}
+              className="absolute top-4 right-4 text-white hover:text-gray-300 transition-colors"
+              aria-label="닫기"
+            >
+              <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
         </div>
       )}
     </main>

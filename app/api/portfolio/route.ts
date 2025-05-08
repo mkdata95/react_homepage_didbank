@@ -10,10 +10,21 @@ interface PortfolioItem {
   period: string;
   role: string;
   overview: string;
-  details: string;
+  details: string; // DB에서는 항상 문자열로 저장됨
   client: string;
   image: string;
   category: string;
+  gallery?: string; // 갤러리 데이터 (JSON 문자열로 저장)
+}
+
+// SQLite 테이블 컬럼 정보 인터페이스
+interface TableColumn {
+  cid: number;
+  name: string;
+  type: string;
+  notnull: number;
+  dflt_value: string | null;
+  pk: number;
 }
 
 // DB 파일 경로
@@ -26,9 +37,11 @@ async function openDb() {
   })
 }
 
-// DB 테이블 생성 (최초 1회)
+// DB 테이블 생성 및 마이그레이션
 async function ensureTable() {
   const db = await openDb()
+  
+  // 기본 테이블 생성
   await db.exec(`CREATE TABLE IF NOT EXISTS portfolio (
     id TEXT PRIMARY KEY,
     title TEXT,
@@ -40,6 +53,19 @@ async function ensureTable() {
     image TEXT,
     category TEXT
   )`)
+  
+  // 테이블 구조 확인
+  const tableInfo = await db.all(`PRAGMA table_info(portfolio)`) as TableColumn[]
+  
+  // gallery 컬럼 존재 여부 확인
+  const hasGalleryColumn = tableInfo.some((column: TableColumn) => column.name === 'gallery')
+  
+  // gallery 컬럼이 없으면 추가
+  if (!hasGalleryColumn) {
+    console.log('Adding gallery column to portfolio table...')
+    await db.exec(`ALTER TABLE portfolio ADD COLUMN gallery TEXT`)
+  }
+  
   await db.close()
 }
 
@@ -48,11 +74,38 @@ export async function GET() {
   const db = await openDb()
   const items = await db.all('SELECT * FROM portfolio')
   await db.close()
-  // details는 JSON 문자열이므로 파싱
-  const parsed = items.map((item: PortfolioItem) => ({ 
-    ...item, 
-    details: JSON.parse(item.details || '[]') 
-  }))
+  
+  // 필드 파싱 처리
+  const parsed = items.map((item: PortfolioItem) => {
+    try {
+      // 갤러리 데이터 파싱
+      let parsedGallery = [];
+      if (item.gallery) {
+        try {
+          parsedGallery = JSON.parse(item.gallery);
+        } catch {
+          parsedGallery = [];
+        }
+      }
+      
+      // details 데이터 파싱
+      let parsedDetails;
+      try {
+        parsedDetails = JSON.parse(item.details || '[]');
+      } catch {
+        parsedDetails = item.details;
+      }
+      
+      return {
+        ...item,
+        details: parsedDetails,
+        gallery: parsedGallery
+      };
+    } catch {
+      return item;
+    }
+  });
+  
   return NextResponse.json(parsed)
 }
 
@@ -61,17 +114,28 @@ export async function POST(req: NextRequest) {
   const db = await openDb()
   const body = await req.json()
   const id = uuidv4()
+  
+  // details 저장 전처리
+  let detailsData = body.details;
+  if (typeof detailsData !== 'string') {
+    detailsData = JSON.stringify(detailsData || []);
+  }
+  
+  // 갤러리 데이터 처리
+  const galleryData = body.gallery ? JSON.stringify(body.gallery) : null;
+  
   await db.run(
-    'INSERT INTO portfolio (id, title, period, role, overview, details, client, image, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO portfolio (id, title, period, role, overview, details, client, image, category, gallery) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     id,
     body.title,
     body.period,
     body.role,
     body.overview,
-    JSON.stringify(body.details || []),
+    detailsData,
     body.client,
     body.image,
-    body.category
+    body.category,
+    galleryData
   )
   await db.close()
   return NextResponse.json({ id })
@@ -81,16 +145,27 @@ export async function PUT(req: NextRequest) {
   await ensureTable()
   const db = await openDb()
   const body = await req.json()
+  
+  // details 저장 전처리
+  let detailsData = body.details;
+  if (typeof detailsData !== 'string') {
+    detailsData = JSON.stringify(detailsData || []);
+  }
+  
+  // 갤러리 데이터 처리
+  const galleryData = body.gallery ? JSON.stringify(body.gallery) : null;
+  
   await db.run(
-    'UPDATE portfolio SET title=?, period=?, role=?, overview=?, details=?, client=?, image=?, category=? WHERE id=?',
+    'UPDATE portfolio SET title=?, period=?, role=?, overview=?, details=?, client=?, image=?, category=?, gallery=? WHERE id=?',
     body.title,
     body.period,
     body.role,
     body.overview,
-    JSON.stringify(body.details || []),
+    detailsData,
     body.client,
     body.image,
     body.category,
+    galleryData,
     body.id
   )
   await db.close()

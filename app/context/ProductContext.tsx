@@ -25,19 +25,21 @@ export function ProductProvider({ children }: { children: ReactNode }) {
   const [products, setProducts] = useState<Product[]>([])
 
   useEffect(() => {
-    // 초기 데이터 로드
-    console.log('Fetching products...')
+    // 초기 데이터 로드 - 이미 데이터가 있으면 다시 불러오지 않음
+    if (products.length > 0) return;
+    
+    let isMounted = true;
     fetch('/api/products')
       .then(res => res.json())
       .then(data => {
-        console.log('Received products:', data)
+        if (!isMounted) return;
+        
         if (Array.isArray(data)) {
           // ID가 없는 경우 자동으로 생성
           const productsWithIds = data.map((product, index) => ({
             ...product,
             id: product.id || `product-${index + 1}`
           }))
-          console.log('Processed products:', productsWithIds)
           setProducts(productsWithIds)
         } else {
           console.error('Received data is not an array:', data)
@@ -46,6 +48,10 @@ export function ProductProvider({ children }: { children: ReactNode }) {
       .catch(error => {
         console.error('Failed to load products:', error)
       })
+      
+    return () => {
+      isMounted = false;
+    };
   }, [])
 
   const updateProduct = async (id: string, product: Product) => {
