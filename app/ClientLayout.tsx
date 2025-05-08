@@ -3,6 +3,7 @@ import { usePathname } from 'next/navigation'
 import dynamic from 'next/dynamic'
 import Link from 'next/link'
 import { ReactNode, useState, useEffect } from 'react'
+import { FaUser } from 'react-icons/fa'
 
 // 불필요한 리렌더링 방지를 위해 메모이제이션된 푸터 컴포넌트
 const Footer = dynamic(() => import('./components/Footer'), { 
@@ -18,24 +19,34 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const [loginId, setLoginId] = useState('')
   const [loginPw, setLoginPw] = useState('')
   const [loginError, setLoginError] = useState('')
+  const [showTopBar, setShowTopBar] = useState(true)
 
   useEffect(() => {
     // 쿠키에서 로그인 상태 확인
     const cookies = document.cookie.split(';').map(c => c.trim())
     const found = cookies.find(c => c.startsWith('admin_auth='))
     setIsLoggedIn(Boolean(found && found.split('=')[1] === '1'))
+
+    // 스크롤 감지하여 상단바 show/hide
+    const onScroll = () => {
+      setShowTopBar(window.scrollY < 50)
+    }
+    window.addEventListener('scroll', onScroll)
+    return () => window.removeEventListener('scroll', onScroll)
   }, [])
 
-  const handleLogout = () => {
-    document.cookie = 'admin_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
-    setIsLoggedIn(false)
-    window.location.href = '/'
+  // 쿠키에서 admin_pw 값 읽기 함수 추가
+  function getAdminPwFromCookie() {
+    const cookies = document.cookie.split(';').map(c => c.trim());
+    const found = cookies.find(c => c.startsWith('admin_pw='));
+    return found ? found.split('=')[1] : 'password';
   }
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault()
-    // 간단 예시: 아이디 admin, 비번 1234
-    if (loginId === 'admin' && loginPw === '1234') {
+    // admin_pw 쿠키 기준으로 로그인
+    const adminPw = getAdminPwFromCookie();
+    if (loginId === 'admin' && loginPw === adminPw) {
       document.cookie = 'admin_auth=1; path=/'
       setIsLoggedIn(true)
       setIsLoginModalOpen(false)
@@ -51,46 +62,47 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   return (
     <>
       {!isAdmin && (
-        <header className="fixed w-full" style={{ background: '#222831', boxShadow: '0 2px 8px 0 #393E46', borderBottom: '2px solid #393E46', zIndex: 50 }}>
-          <nav className="container mx-auto px-4 py-4">
-            <div className="flex justify-between items-center h-16">
-              <Link href="/" prefetch={true} className="text-2xl font-bold" style={{ color: '#DFD0B8' }}>
-                페델타
-              </Link>
-              <div className="hidden md:flex items-center space-x-10">
-                <Link href="/about" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>회사소개</Link>
-                <Link href="/products" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>주요제품</Link>
-                <Link href="/portfolio" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>주요실적</Link>
-                <Link href="/downloads" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>자료다운로드</Link>
-                <Link href="/location" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>오시는길</Link>
-                <Link href="/contact" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>문의하기</Link>
-                {isLoggedIn ? (
-                  <div className="flex items-center space-x-4">
-                    <Link href="/admin" prefetch={true} className="font-semibold transition-colors" style={{ color: '#DFD0B8' }}>관리자</Link>
-                    <button
-                      onClick={handleLogout}
-                      className="px-4 py-2 rounded-lg border border-[#DFD0B8] text-[#DFD0B8] font-semibold hover:bg-[#DFD0B8] hover:text-[#222831] transition-colors"
-                    >
-                      로그아웃
-                    </button>
-                  </div>
-                ) : (
-                  <button
-                    onClick={() => setIsLoginModalOpen(true)}
-                    className="px-4 py-2 rounded-lg border border-[#DFD0B8] text-[#DFD0B8] font-semibold hover:bg-[#DFD0B8] hover:text-[#222831] transition-colors"
-                  >
-                    로그인
-                  </button>
-                )}
+        <>
+          {/* 1단: 상단 블랙 바 (로고/로그인/장바구니) */}
+          <div className={`w-full bg-black transition-all duration-300 fixed top-0 left-0 z-50 ${showTopBar ? 'opacity-100 h-12' : 'opacity-0 h-0 overflow-hidden'}`}>
+            <div className="container mx-auto flex justify-between items-center px-8 h-12">
+              <Link href="/" className="text-2xl font-extrabold text-white tracking-widest">FEDELTA</Link>
+              <div className="flex items-center gap-6">
+                <button className="flex items-center gap-1 text-gray-200 hover:text-violet-400" onClick={() => setIsLoginModalOpen(true)}>
+                  <FaUser className="inline-block" /> 로그인
+                </button>
               </div>
-              <button className="md:hidden transition-colors" style={{ color: '#DFD0B8' }}>
-                <svg className="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
-                </svg>
-              </button>
             </div>
-          </nav>
-        </header>
+          </div>
+          {/* 2단: 하단 메뉴 바 (fixed) */}
+          <div
+            className="w-full z-40 flex items-center px-8 py-3 shadow"
+            style={{
+              position: 'fixed',
+              top: showTopBar ? '48px' : '0px',
+              left: 0,
+              right: 0,
+              background: '#181617',
+              transition: 'top 0.3s',
+            }}
+          >
+            {/* 상단바가 안 보일 때만 로고 노출 */}
+            {!showTopBar && (
+              <Link href="/" className="text-2xl font-extrabold text-white tracking-widest mr-8">FEDELTA</Link>
+            )}
+            <ul className="flex gap-8 items-center text-white font-medium justify-center flex-1">
+              <li className="hover:text-violet-400 cursor-pointer"><Link href="/about">회사소개</Link></li>
+              <li className="hover:text-violet-400 cursor-pointer"><Link href="/products">주요제품</Link></li>
+              <li className="hover:text-violet-400 cursor-pointer"><Link href="/portfolio">주요실적</Link></li>
+              <li className="hover:text-violet-400 cursor-pointer"><Link href="/downloads">자료다운로드</Link></li>
+              <li className="hover:text-violet-400 cursor-pointer"><Link href="/location">오시는길</Link></li>
+              <li className="hover:text-violet-400 cursor-pointer"><Link href="/contact">문의하기</Link></li>
+              {isLoggedIn && (
+                <li className="hover:text-violet-400 cursor-pointer"><Link href="/admin">관리자</Link></li>
+              )}
+            </ul>
+          </div>
+        </>
       )}
       {/* 로그인 모달 */}
       {isLoginModalOpen && (

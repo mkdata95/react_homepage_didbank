@@ -1,12 +1,12 @@
 export const siteContent = {
   "siteInfo": {
-    "siteName": "페델타",
-    "companyName": "페델타 주식회사",
+    "siteName": "FEDELTA",
+    "companyName": "(주)훼델타",
     "businessNumber": "123-45-67890",
     "ceoName": "홍길동2",
     "phone": "02-8234-5678",
     "address": "서울특별시 용산구 청파로 48 (한강로3가, 용산전자오피스텔) 611호",
-    "email": "mkdata95@naver.com"
+    "email": "abcd5@naver.com"
   },
   "hero": {
     "title": "디지털 혁신을 선도하는11\n최고의 기술 파트너",
