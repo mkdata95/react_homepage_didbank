@@ -38,7 +38,7 @@ export default function AdminLayout({
     { name: 'Hero 섹션', path: '/admin/hero' },
     { name: '회사 소개', path: '/admin/about' },
     { name: '서비스', path: '/admin/services' },
-    { name: '실적관리 카테고리', path: '/admin/projects' },
+    { name: '자료다운로드 관리', path: '/admin/downloads' },
     { name: '문의 관리', path: '/admin/contact' },
   ]
 

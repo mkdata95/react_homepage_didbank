@@ -1,51 +1,47 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { writeFile } from 'fs/promises'
+import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { v4 as uuidv4 } from 'uuid'
-import sharp from 'sharp'
 
-export async function POST(request: NextRequest) {
+export async function POST(req: NextRequest) {
   try {
-    const formData = await request.formData()
+    const formData = await req.formData()
     const file = formData.get('file') as File
     
     if (!file) {
       return NextResponse.json(
-        { error: 'No file uploaded' },
+        { error: '파일이 없습니다' },
         { status: 400 }
       )
     }
 
-    const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
+    const buffer = Buffer.from(await file.arrayBuffer())
+    const filename = `${uuidv4()}-${file.name.replace(/\s+/g, '-')}`
 
-    // 이미지 압축
-    const compressedBuffer = await sharp(buffer)
-      .resize(1200, 1200, { // 최대 크기 제한
-        fit: 'inside',
-        withoutEnlargement: true
-      })
-      .jpeg({ quality: 80 }) // JPEG 포맷으로 변환 및 품질 설정
-      .toBuffer()
+    // 디렉토리 생성 (없는 경우)
+    const uploadsDir = join(process.cwd(), 'public', 'uploads')
+    try {
+      await mkdir(uploadsDir, { recursive: true })
+    } catch (error) {
+      console.error('디렉토리 생성 오류:', error)
+    }
 
-    // 파일 확장자 추출
-    const ext = 'jpg' // 항상 JPEG로 저장
-    const fileName = `${uuidv4()}.${ext}`
+    // 파일 저장
+    const filePath = join(uploadsDir, filename)
+    await writeFile(filePath, buffer)
 
-    // public/uploads 디렉토리에 파일 저장
-    const uploadDir = join(process.cwd(), 'public', 'uploads')
-    const filePath = join(uploadDir, fileName)
+    // 프론트엔드에서 접근 가능한 URL 경로 반환
+    const fileUrl = `/uploads/${filename}`
     
-    await writeFile(filePath, compressedBuffer)
-
-    // 파일 URL 반환
-    const fileUrl = `/uploads/${fileName}`
-    
-    return NextResponse.json({ url: fileUrl })
+    return NextResponse.json({ 
+      fileUrl,
+      fileName: file.name,
+      size: file.size
+    })
   } catch (error) {
-    console.error('Error uploading file:', error)
+    console.error('파일 업로드 오류:', error)
     return NextResponse.json(
-      { error: 'Error uploading file' },
+      { error: '파일 업로드 실패' },
       { status: 500 }
     )
   }
