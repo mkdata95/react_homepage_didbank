@@ -9,12 +9,19 @@ export default function AdminPasswordPage() {
   const [pwMsg, setPwMsg] = useState('')
   const [pwSuccess, setPwSuccess] = useState(false)
 
+  // 쿠키에서 admin_pw 값 읽기 함수 추가
+  function getAdminPwFromCookie() {
+    const cookies = document.cookie.split(';').map(c => c.trim());
+    const found = cookies.find(c => c.startsWith('admin_pw='));
+    return found ? found.split('=')[1] : 'password';
+  }
+
   // 비밀번호 변경 핸들러 (예시: 기존 비밀번호는 'password'로 하드코딩)
   const handleChangePassword = (e: React.FormEvent) => {
     e.preventDefault()
     setPwMsg('')
     setPwSuccess(false)
-    if (currentPw !== 'password') {
+    if (currentPw !== getAdminPwFromCookie()) {
       setPwMsg('현재 비밀번호가 올바르지 않습니다.')
       return
     }

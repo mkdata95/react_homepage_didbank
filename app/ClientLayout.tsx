@@ -68,9 +68,22 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
             <div className="container mx-auto flex justify-between items-center px-8 h-12">
               <Link href="/" className="text-2xl font-extrabold text-white tracking-widest">FEDELTA</Link>
               <div className="flex items-center gap-6">
-                <button className="flex items-center gap-1 text-gray-200 hover:text-violet-400" onClick={() => setIsLoginModalOpen(true)}>
-                  <FaUser className="inline-block" /> 로그인
-                </button>
+                {isLoggedIn ? (
+                  <button
+                    className="flex items-center gap-1 text-gray-200 hover:text-violet-400"
+                    onClick={() => {
+                      document.cookie = 'admin_auth=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;'
+                      setIsLoggedIn(false)
+                      window.location.reload()
+                    }}
+                  >
+                    로그아웃
+                  </button>
+                ) : (
+                  <button className="flex items-center gap-1 text-gray-200 hover:text-violet-400" onClick={() => setIsLoginModalOpen(true)}>
+                    <FaUser className="inline-block" /> 로그인
+                  </button>
+                )}
               </div>
             </div>
           </div>
