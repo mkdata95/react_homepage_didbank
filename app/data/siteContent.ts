@@ -27,7 +27,7 @@ export const siteContent = {
     "values": {
       "title": "Core Values",
       "items": [
-        "혁신적인 기술 솔루션",
+        "혁신적인 기술 솔루션\nㅣㅏ러ㅣㅏㅇ너ㅣㅏㄹㅇㄴ\nㅣㅓㅏㅇ리ㅏㅇ널ㅇㄴ\n",
         "고객 중심의 서비스",
         "지속 가능한 성장",
         "신뢰와 책임감"

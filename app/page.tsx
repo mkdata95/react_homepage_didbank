@@ -398,49 +398,50 @@ export default function Home() {
                   value={aboutForm.title}
                   onChange={e => setAboutForm(f => ({ ...f, title: e.target.value }))}
                 />
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                  <div className="space-y-8">
-                    <input
-                      className="text-2xl font-semibold text-blue-600 w-full text-black px-2 py-1 rounded"
-                      value={aboutForm.visionTitle}
-                      onChange={e => setAboutForm(f => ({ ...f, visionTitle: e.target.value }))}
-                    />
-                    {aboutForm.visionContent.map((paragraph, i) => (
+                <div className="w-full mt-12">
+                  <div className="flex flex-row w-full gap-6">
+                    {/* Our Vision 카드 */}
+                    <div className="flex-[2] bg-white rounded-xl shadow p-6 flex flex-col items-start justify-start">
+                      <h3 className="text-2xl font-bold text-blue-800 mb-4 text-left">Our Vision</h3>
                       <textarea
-                        key={i}
-                        className="text-gray-600 leading-relaxed text-lg w-full text-black px-2 py-1 rounded mb-2"
-                        value={paragraph}
+                        className="text-gray-900 text-lg text-left w-full px-2 py-1 rounded border mb-2"
+                        value={aboutForm.visionContent[0]}
                         onChange={e => {
-                          const newContent = [...aboutForm.visionContent]
-                          newContent[i] = e.target.value
-                          setAboutForm(f => ({ ...f, visionContent: newContent }))
+                          const newContent = [...aboutForm.visionContent];
+                          newContent[0] = e.target.value;
+                          setAboutForm(f => ({ ...f, visionContent: newContent }));
                         }}
-                        rows={2}
+                        rows={3}
                       />
-                    ))}
-                  </div>
-                  <div className="space-y-8">
-                    <input
-                      className="text-2xl font-semibold text-blue-600 w-full text-black px-2 py-1 rounded"
-                      value={aboutForm.valuesTitle}
-                      onChange={e => setAboutForm(f => ({ ...f, valuesTitle: e.target.value }))}
-                    />
-                    <ul className="space-y-6">
-                      {aboutForm.valuesItems.map((item, i) => (
-                        <li key={i} className="flex items-start group">
-                          <span className="text-blue-600 mr-4 text-xl group-hover:scale-110 transition-transform">•</span>
-                          <input
-                            className="text-gray-600 text-lg w-full text-black px-2 py-1 rounded"
-                            value={item}
-                            onChange={e => {
-                              const newItems = [...aboutForm.valuesItems]
-                              newItems[i] = e.target.value
-                              setAboutForm(f => ({ ...f, valuesItems: newItems }))
-                            }}
-                          />
-                        </li>
-                      ))}
-                    </ul>
+                    </div>
+                    {/* Core Values 1 카드 */}
+                    <div className="flex-1 bg-white rounded-xl shadow p-6 flex flex-col items-start justify-start">
+                      <h3 className="text-xl font-bold text-blue-800 mb-4 text-left">Core Values 1</h3>
+                      <textarea
+                        className="text-gray-900 text-lg text-left w-full px-2 py-1 rounded border mb-2"
+                        value={aboutForm.valuesItems[0]}
+                        onChange={e => {
+                          const newItems = [...aboutForm.valuesItems];
+                          newItems[0] = e.target.value;
+                          setAboutForm(f => ({ ...f, valuesItems: newItems }));
+                        }}
+                        rows={3}
+                      />
+                    </div>
+                    {/* Core Values 2 카드 */}
+                    <div className="flex-1 bg-white rounded-xl shadow p-6 flex flex-col items-start justify-start">
+                      <h3 className="text-xl font-bold text-blue-800 mb-4 text-left">Core Values 2</h3>
+                      <textarea
+                        className="text-gray-900 text-lg text-left w-full px-2 py-1 rounded border mb-2"
+                        value={aboutForm.valuesItems[1]}
+                        onChange={e => {
+                          const newItems = [...aboutForm.valuesItems];
+                          newItems[1] = e.target.value;
+                          setAboutForm(f => ({ ...f, valuesItems: newItems }));
+                        }}
+                        rows={3}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className="flex gap-2 justify-center mt-6">
@@ -452,25 +453,37 @@ export default function Home() {
             ) : (
               <>
                 <h2 className="text-5xl font-bold text-center mb-20 text-gray-900">{siteContent.about.title}</h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-16">
-                  <div className="space-y-8">
-                    <h3 className="text-3xl font-semibold text-blue-600">{siteContent.about.vision.title}</h3>
-                    {siteContent.about.vision.content.map((paragraph, i) => (
-                      <p key={i} className="text-gray-600 leading-relaxed text-lg">
-                        {paragraph}
-                      </p>
-                    ))}
-                  </div>
-                  <div className="space-y-8">
-                    <h3 className="text-3xl font-semibold text-blue-600">{siteContent.about.values.title}</h3>
-                    <ul className="space-y-6">
-                      {siteContent.about.values.items.map((item, i) => (
-                        <li key={i} className="flex items-start group">
-                          <span className="text-blue-600 mr-4 text-xl group-hover:scale-110 transition-transform">•</span>
-                          <span className="text-gray-600 text-lg">{item}</span>
-                        </li>
-                      ))}
-                    </ul>
+                <div className="w-full mt-12">
+                  <div className="flex flex-row w-full gap-6">
+                    {/* Our Vision 카드 */}
+                    <div className="flex-[2] bg-white rounded-xl shadow p-6 flex flex-col items-start justify-start">
+                      <h3 className="text-2xl font-bold text-blue-800 mb-4 text-left">Our Vision</h3>
+                      <p className="text-gray-900 text-lg text-left mb-2">{siteContent.about.vision.content[0]}</p>
+                    </div>
+                    {/* Core Values 1 카드 */}
+                    <div className="flex-1 bg-white rounded-xl shadow p-6 flex flex-col items-start justify-start">
+                      <h3 className="text-xl font-bold text-blue-800 mb-4 text-left">Core Values 1</h3>
+                      <ul className="list-disc pl-5 text-gray-900 text-lg text-left w-full mb-2">
+                        {siteContent.about.values.items[0]
+                          .split('\n')
+                          .filter(line => line.trim() !== '')
+                          .map((line, idx) => (
+                            <li key={idx}>{line}</li>
+                          ))}
+                      </ul>
+                    </div>
+                    {/* Core Values 2 카드 */}
+                    <div className="flex-1 bg-white rounded-xl shadow p-6 flex flex-col items-start justify-start">
+                      <h3 className="text-xl font-bold text-blue-800 mb-4 text-left">Core Values 2</h3>
+                      <ul className="list-disc pl-5 text-gray-900 text-lg text-left w-full mb-2">
+                        {siteContent.about.values.items[1]
+                          .split('\n')
+                          .filter(line => line.trim() !== '')
+                          .map((line, idx) => (
+                            <li key={idx}>{line}</li>
+                          ))}
+                      </ul>
+                    </div>
                   </div>
                 </div>
                 {isAdmin && (
