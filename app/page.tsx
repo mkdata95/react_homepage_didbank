@@ -242,6 +242,8 @@ export default function Home() {
     desc: 'CSS기반 모든 기기 풀 반응형 기업테마',
   })
   const [portfolioSaveMsg, setPortfolioSaveMsg] = useState('')
+  // 공지사항 상태 추가
+  const [mainNotices, setMainNotices] = useState<{id:number, title:string, date:string}[]>([]);
 
   // 서버에서 동적으로 불러오기
   useEffect(() => {
@@ -284,6 +286,14 @@ export default function Home() {
         setPhotoCardsDraft(data)
       })
   }, [])
+
+  useEffect(() => {
+    fetch('/api/notice')
+      .then(res => res.json())
+      .then(data => {
+        setMainNotices(data.slice(0, 5));
+      });
+  }, []);
 
   const handleHeroSave = async () => {
     setSaveMsg('저장 중...')
@@ -558,13 +568,19 @@ export default function Home() {
                 <button className="ml-auto text-2xl text-gray-400 hover:text-black">+</button>
               </div>
               <ul>
-                <li className="flex justify-between items-center py-2 border-b">
-                  <span className="truncate">새로운 소식을 알려드립니다. 새로운...</span>
-                  <span className="text-xs text-gray-400">2024-10-24</span>
-                </li>
-                <li className="flex justify-between items-center py-2 border-b">
-                  <span className="truncate">pro#03 펜션테마 새롭게 출시... <span className="ml-1 text-xs bg-gray-200 px-2 rounded">+3</span></span>
-                  <span className="text-xs text-gray-400">2018-08-28</span>
+                {mainNotices.length === 0 && (
+                  <li className="text-gray-400 py-4 text-center">공지사항이 없습니다.</li>
+                )}
+                {mainNotices.map(notice => (
+                  <li key={notice.id} className="flex justify-between items-center py-2 border-b">
+                    <Link href={`/customer/notice/${notice.id}`} className="truncate text-blue-700 hover:underline">
+                      {notice.title}
+                    </Link>
+                    <span className="text-xs text-gray-400">{notice.date?.slice(0, 10)}</span>
+                  </li>
+                ))}
+                <li className="text-right pt-2">
+                  <Link href="/customer/notice" className="text-xs text-blue-500 hover:underline">+ 전체보기</Link>
                 </li>
               </ul>
             </div>

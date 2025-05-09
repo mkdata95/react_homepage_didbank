@@ -34,4 +34,13 @@ model Portfolio {
   period  String
   overview String
   image   String
+}
+
+model Notice {
+  id        Int      @id @default(autoincrement())
+  title     String
+  content   String
+  author    String
+  date      DateTime @default(now())
+  views     Int      @default(0)
 } 
