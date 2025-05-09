@@ -39,41 +39,50 @@ export default function ContactPage() {
   }
 
   return (
-    <main className="pt-20 bg-white min-h-screen">
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto">
-            <h1 className="text-5xl font-bold text-center mb-20 text-[#222831]">문의하기</h1>
-            <div className="bg-white rounded-2xl shadow-xl p-12">
-              <form onSubmit={handleSubmit} className="space-y-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                  <div>
-                    <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-3">이름</label>
-                    <input name="name" value={form.name} onChange={handleChange} required placeholder="이름" className="w-full px-6 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg" />
-                  </div>
-                  <div>
-                    <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-3">이메일</label>
-                    <input name="email" value={form.email} onChange={handleChange} required type="email" placeholder="이메일" className="w-full px-6 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg" />
-                  </div>
-                </div>
-                <div>
-                  <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-3">제목</label>
-                  <input name="subject" value={form.subject} onChange={handleChange} required placeholder="제목" className="w-full px-6 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg" />
-                </div>
-                <div>
-                  <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-3">문의 내용</label>
-                  <textarea name="message" value={form.message} onChange={handleChange} required placeholder="문의 내용" className="w-full px-6 py-4 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500 text-lg" style={{ minHeight: '320px' }} />
-                </div>
-                <button type="submit" disabled={sending} className="w-full bg-blue-600 text-white py-4 px-8 rounded-xl font-semibold hover:bg-blue-700 transition-all transform hover:scale-[1.02] focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 text-lg shadow-lg">
-                  {sending ? '전송 중...' : '제출하기'}
-                </button>
-                {success && <div className="text-green-600 text-center font-semibold mt-2">{success}</div>}
-                {error && <div className="text-red-600 text-center font-semibold mt-2">{error}</div>}
-              </form>
-            </div>
+    <main className="bg-gray-50 min-h-screen">
+      <div className="container mx-auto py-12 px-4 mt-20" style={{ maxWidth: '1100px' }}>
+        <div className="bg-white rounded-xl shadow-lg">
+          {/* 헤더 */}
+          <div className="border-b px-8 py-6">
+            <h2 className="text-2xl font-bold text-gray-800">문의하기</h2>
           </div>
+          {/* 폼 */}
+          <form onSubmit={handleSubmit} className="p-8">
+            <div className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div>
+                  <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-2">이름 <span className="text-red-500">*</span></label>
+                  <input name="name" value={form.name} onChange={handleChange} required placeholder="이름을 입력하세요" className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                </div>
+                <div>
+                  <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-2">이메일 <span className="text-red-500">*</span></label>
+                  <input name="email" value={form.email} onChange={handleChange} required type="email" placeholder="이메일을 입력하세요" className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+                </div>
+              </div>
+              <div>
+                <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-2">제목 <span className="text-red-500">*</span></label>
+                <input name="subject" value={form.subject} onChange={handleChange} required placeholder="제목을 입력하세요" className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors" />
+              </div>
+              <div>
+                <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-2">문의 내용 <span className="text-red-500">*</span></label>
+                <textarea name="message" value={form.message} onChange={handleChange} required placeholder="문의 내용을 입력하세요" className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-colors resize-y text-lg" style={{ height: '300px' }} />
+              </div>
+            </div>
+            {/* 버튼 영역 */}
+            <div className="flex justify-end gap-3 mt-8 pt-6 border-t">
+              <button
+                type="submit"
+                disabled={sending}
+                className="px-6 py-3 rounded-lg bg-blue-600 text-white font-medium hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sending ? '전송 중...' : '문의하기'}
+              </button>
+            </div>
+            {success && <div className="text-green-600 text-center font-semibold mt-4">{success}</div>}
+            {error && <div className="text-red-600 text-center font-semibold mt-4">{error}</div>}
+          </form>
         </div>
-      </section>
+      </div>
     </main>
   )
 } 

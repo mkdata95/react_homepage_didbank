@@ -109,7 +109,6 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
               <li className="hover:text-violet-400 cursor-pointer"><Link href="/products">주요제품</Link></li>
               <li className="hover:text-violet-400 cursor-pointer"><Link href="/portfolio">주요실적</Link></li>
               <li className="hover:text-violet-400 cursor-pointer"><Link href="/downloads">자료다운로드</Link></li>
-              <li className="hover:text-violet-400 cursor-pointer"><Link href="/location">오시는길</Link></li>
               {/* 고객센터 드롭다운 메뉴 */}
               <li
                 className="relative"
@@ -145,6 +144,13 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
                           onClick={() => setIsCustomerMenuOpen(false)}
                         >
                           문의하기
+                        </Link>
+                        <Link
+                          href="/location"
+                          className="block px-4 py-2 text-gray-800 hover:bg-gray-100 hover:text-violet-600"
+                          onClick={() => setIsCustomerMenuOpen(false)}
+                        >
+                          오시는길
                         </Link>
                       </div>
                     </div>

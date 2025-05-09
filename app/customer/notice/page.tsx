@@ -40,7 +40,8 @@ export default function NoticePage() {
       <div className="bg-white border-b">
         <div className="container mx-auto flex gap-4 py-4 px-2" style={{ maxWidth: '1100px' }}>
           <button className="font-bold border-b-2 border-black px-4">공지사항</button>
-          <Link href="/customer/qna" className="text-gray-500 px-4">문의하기</Link>
+          <Link href="/contact" className="text-gray-500 px-4">문의하기</Link>
+          <Link href="/location" className="text-gray-500 px-4">오시는길</Link>
         </div>
       </div>
       {/* 경로 네비게이션 */}
