@@ -231,6 +231,17 @@ export default function Home() {
     title: initialSiteContent.photoSection?.title || '사진고',
     desc: initialSiteContent.photoSection?.desc || '다온테마의 다양한 사진을 소개합니다.'
   })
+  // PORTFOLIO 섹션 인라인 수정 상태 추가
+  const [portfolioEditMode, setPortfolioEditMode] = useState(false)
+  const [portfolioSectionEdit, setPortfolioSectionEdit] = useState({
+    title: 'PORTFOLIO',
+    desc: 'CSS기반 모든 기기 풀 반응형 기업테마',
+  })
+  const [portfolioSectionDraft, setPortfolioSectionDraft] = useState({
+    title: 'PORTFOLIO',
+    desc: 'CSS기반 모든 기기 풀 반응형 기업테마',
+  })
+  const [portfolioSaveMsg, setPortfolioSaveMsg] = useState('')
 
   // 서버에서 동적으로 불러오기
   useEffect(() => {
@@ -535,143 +546,109 @@ export default function Home() {
         </div>
       </section>
 
+      {/* 정보 요약/바로가기 섹션 (사진 참고) */}
+      <section className="py-16 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="flex flex-col md:flex-row gap-8 mb-10">
+            {/* 공지사항/질문 탭 */}
+            <div className="flex-1 bg-white rounded-xl shadow p-6 min-w-[320px]">
+              <div className="flex border-b mb-4">
+                <button className="flex-1 py-2 font-bold border-b-2 border-black">공지사항</button>
+                <button className="flex-1 py-2 text-gray-500">질문과 답변</button>
+                <button className="ml-auto text-2xl text-gray-400 hover:text-black">+</button>
+              </div>
+              <ul>
+                <li className="flex justify-between items-center py-2 border-b">
+                  <span className="truncate">새로운 소식을 알려드립니다. 새로운...</span>
+                  <span className="text-xs text-gray-400">2024-10-24</span>
+                </li>
+                <li className="flex justify-between items-center py-2 border-b">
+                  <span className="truncate">pro#03 펜션테마 새롭게 출시... <span className="ml-1 text-xs bg-gray-200 px-2 rounded">+3</span></span>
+                  <span className="text-xs text-gray-400">2018-08-28</span>
+                </li>
+              </ul>
+            </div>
+            {/* 전화/오시는 길 */}
+            <div className="flex-1 flex flex-col md:flex-row gap-4 min-w-[320px]">
+              <div className="flex-1 bg-blue-600 text-white rounded-xl flex flex-col items-center justify-center p-8 min-w-[160px]">
+                <div className="text-3xl font-bold mb-2">02.123.4567</div>
+                <div className="text-sm">평일 : 09:00 ~ 18:00<br />토,일,공휴일 휴무</div>
+              </div>
+              <div className="flex-1 bg-gray-800 text-white rounded-xl flex flex-col items-center justify-center p-8 min-w-[160px]">
+                <div className="text-2xl mb-2">오시는 길</div>
+                <div className="text-sm text-center">다온테마는 항상 열려 있습니다.<br />오시는 길을 안내해드립니다.</div>
+              </div>
+            </div>
+          </div>
+          {/* 하단 4개 카드 */}
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+            <div className="bg-white rounded-xl shadow p-6 flex flex-col justify-between min-h-[180px]">
+              <div>
+                <div className="font-bold mb-2">온라인문의</div>
+                <div className="text-gray-500 text-sm mb-4">궁금하신 내용을 남겨주시면 신속하고 답변드리겠습니다.</div>
+              </div>
+              <div className="flex justify-end text-blue-400 text-3xl">📝</div>
+            </div>
+            <div className="bg-white rounded-xl shadow p-6 flex flex-col justify-between min-h-[180px]">
+              <div>
+                <div className="font-bold mb-2">FAQ</div>
+                <div className="text-gray-500 text-sm mb-4">고객님들이 가장 궁금해 하시는 질문들이 여기에 있습니다.</div>
+              </div>
+              <div className="flex justify-end text-blue-400 text-3xl">❓</div>
+            </div>
+            <div className="bg-white rounded-xl shadow p-6 flex flex-col justify-between min-h-[180px]">
+              <div>
+                <div className="font-bold mb-2">갤러리</div>
+                <div className="text-gray-500 text-sm mb-4">다온테마만의 다양한 소식을 이미지로 만나보세요.</div>
+              </div>
+              <div className="flex justify-end text-blue-400 text-3xl">📷</div>
+            </div>
+            <div className="bg-white rounded-xl shadow p-6 flex flex-col justify-between min-h-[180px]">
+              <div>
+                <div className="font-bold mb-2">채용안내</div>
+                <div className="text-gray-500 text-sm mb-4">창의적이고 도전적인 인재를 기다리고 있습니다.</div>
+              </div>
+              <div className="flex justify-end text-blue-400 text-3xl">💙</div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* 사진고 섹션 (OUR BUSINESS 카드와 동일 디자인) */}
       <section className="py-20 bg-gray-50">
         <div className="container mx-auto px-4">
-          <div className="text-center mb-16 relative">
-            {photoEditMode ? (
-              <>
-                <input
-                  className="text-4xl font-bold mb-4 text-gray-900 w-full border rounded px-2 py-1 text-center"
-                  value={photoSectionDraft.title}
-                  onChange={e => setPhotoSectionDraft({...photoSectionDraft, title: e.target.value})}
-                />
-                <input
-                  className="text-xl text-gray-600 w-full border rounded px-2 py-1 text-center"
-                  value={photoSectionDraft.desc}
-                  onChange={e => setPhotoSectionDraft({...photoSectionDraft, desc: e.target.value})}
-                />
-              </>
-            ) : (
-              <>
-                <h2 className="text-4xl font-bold mb-4 text-gray-900">{photoSectionEdit.title}</h2>
-                <p className="text-xl text-gray-600">{photoSectionEdit.desc}</p>
-              </>
-            )}
-            {isAdmin && (
-              <div className="absolute right-0 top-1/2 -translate-y-1/2">
-                {photoEditMode ? (
-                  <div className="flex gap-2">
-                    <button onClick={handlePhotoSave} className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-600 transition-all">
-                      저장
-                    </button>
-                    <button onClick={() => { setPhotoEditMode(false); setPhotoSectionDraft(photoSectionEdit) }} className="bg-gray-500 text-white px-4 py-2 rounded shadow-lg hover:bg-gray-600 transition-all">
-                      취소
-                    </button>
-                  </div>
-                ) : (
-                  <button 
-                    onClick={() => setPhotoEditMode(true)} 
-                    className="bg-yellow-400 text-black px-4 py-2 rounded shadow-lg hover:bg-yellow-500 transition-all"
-                  >
-                    수정
-                  </button>
-                )}
-              </div>
-            )}
-            {photoSaveMsg && <div className="text-green-500 mt-2">{photoSaveMsg}</div>}
+          <div className="text-center mb-16">
+            <h2 className="text-4xl font-bold mb-4 text-gray-900">{photoSectionEdit.title}</h2>
+            <p className="text-xl text-gray-500">{photoSectionEdit.desc}</p>
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
-            {photoEditMode ? (
-              photoCardsDraft.length === 0 ? (
-                <div className="col-span-full flex flex-col items-center justify-center py-24">
-                  <div className="text-gray-400 text-xl mb-6">아직 등록된 사진이 없습니다.<br/>+ 버튼을 눌러 새 카드를 추가하세요.</div>
-                  <button
-                    className="w-16 h-16 rounded-full border-2 border-gray-400 flex items-center justify-center text-3xl text-gray-500 hover:bg-gray-100 transition-all"
-                    onClick={() => setPhotoCardsDraft([{ image: '', title: '', desc: '' }, ...photoCardsDraft])}
-                  >
-                    +
-                  </button>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-7xl mx-auto">
+            {photoCards.map((card, idx) => (
+              <div
+                key={idx}
+                className="bg-white rounded-2xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-2 flex flex-col overflow-hidden"
+                style={{ height: 480, minWidth: 340, maxWidth: 400 }}
+              >
+                {/* 이미지 영역: 고정 비율, 높이 240px */}
+                <div className="relative w-full" style={{ height: 240 }}>
+                  <Image
+                    src={card.image || '/images/placeholder.png'}
+                    alt={card.title}
+                    fill
+                    className="object-cover w-full h-full"
+                    style={{ minHeight: 240, maxHeight: 240 }}
+                  />
                 </div>
-              ) : (
-                <>
-                  {photoCardsDraft.map((card, idx) => (
-                    <div key={idx} className="relative flex flex-col items-center mx-2" style={{ width: 400 }}>
-                      {/* 배경 이미지 */}
-                      <div className="h-[340px] w-full rounded-lg overflow-hidden">
-                        <Image src={card.image || '/images/placeholder.png'} alt={card.title} width={400} height={340} className="object-cover w-full h-full" />
-                        <label className="absolute top-4 right-4 z-10 cursor-pointer bg-white/80 px-3 py-1 rounded text-sm hover:bg-white transition-all">
-                          이미지 선택
-                          <input
-                            type="file"
-                            accept="image/*"
-                            style={{ display: 'none' }}
-                            onChange={e => handlePhotoFileChange(e, idx)}
-                          />
-                        </label>
-                      </div>
-                      {/* 텍스트 카드: 위로 겹치게 */}
-                      <div className="z-10 bg-white rounded-lg w-[400px] min-w-[400px] max-w-[400px] h-[180px] px-8 py-8 text-center -mt-12 flex flex-col justify-center">
-                        <input
-                          className="text-xl font-bold mb-2 w-full text-center bg-transparent border-none focus:ring-0 break-words whitespace-normal overflow-hidden"
-                          value={card.title}
-                          onChange={e => {
-                            const next = [...photoCardsDraft];
-                            next[idx].title = e.target.value;
-                            setPhotoCardsDraft(next);
-                          }}
-                        />
-                        <textarea
-                          className="text-gray-500 text-base w-full text-center bg-transparent border-none focus:ring-0 break-words overflow-auto resize-none"
-                          value={card.desc}
-                          onChange={e => {
-                            const next = [...photoCardsDraft];
-                            next[idx].desc = e.target.value;
-                            setPhotoCardsDraft(next);
-                          }}
-                          rows={2}
-                        />
-                      </div>
-                      {/* + 버튼 */}
-                      <div className="w-full flex justify-center pb-8">
-                        <button
-                          className="w-12 h-12 rounded-full border flex items-center justify-center text-2xl"
-                          onClick={() => setPhotoCardsDraft([{ image: '', title: '', desc: '' }, ...photoCardsDraft])}
-                        >
-                          +
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </>
-              )
-            ) : (
-              photoCards.length === 0 ? (
-                <div className="col-span-full flex flex-col items-center justify-center py-24">
-                  <div className="text-gray-400 text-xl mb-6">아직 등록된 사진이 없습니다.</div>
-                </div>
-              ) : (
-                photoCards.map((card, idx) => (
-                  <div key={idx} className="relative flex flex-col items-center mx-2" style={{ width: 400 }}>
-                    {/* 배경 이미지 */}
-                    <div className="h-[340px] w-full rounded-lg overflow-hidden">
-                      <Image src={card.image || '/images/placeholder.png'} alt={card.title} width={400} height={340} className="object-cover w-full h-full" />
-                    </div>
-                    {/* 텍스트 카드: 위로 겹치게 */}
-                    <div className="z-10 bg-white rounded-lg w-[400px] min-w-[400px] max-w-[400px] h-[180px] px-8 py-8 text-center -mt-12 flex flex-col justify-center">
-                      <h3 className="text-xl font-bold mb-2 w-full break-words whitespace-normal overflow-hidden">{card.title}</h3>
-                      <p className="text-gray-500 text-base w-full break-words overflow-hidden line-clamp-2">{card.desc}</p>
-                    </div>
-                    {/* + 버튼 */}
-                    <div className="w-full flex justify-center pb-8">
-                      <button className="w-12 h-12 rounded-full border flex items-center justify-center text-2xl" style={{ visibility: 'hidden' }}>
-                        +
-                      </button>
-                    </div>
+                {/* 텍스트 영역: 고정 높이, 내부 내용도 줄수 제한 */}
+                <div className="flex-1 flex flex-col justify-between p-8" style={{ height: 240 }}>
+                  <div>
+                    <h3 className="text-2xl font-bold mb-2 text-gray-900 truncate">{card.title}</h3>
+                    <p className="text-gray-600 text-base mb-4 line-clamp-2" style={{ minHeight: 48 }}>
+                      {card.desc}
+                    </p>
                   </div>
-                ))
-              )
-            )}
+                </div>
+              </div>
+            ))}
           </div>
         </div>
       </section>
@@ -920,33 +897,74 @@ export default function Home() {
       </section>
 
       {/* 주요 실적 미리보기 (4개 + 더보기) */}
+      {/* 주요 실적 미리보기(4개 + 더보기) 섹션 전체 삭제 */}
+
+      {/* 포트폴리오 갤러리 섹션 (이미지 참고 스타일) */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">{initialSiteContent.projects.title}</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
-            {portfolioItems.slice(0, 4).map((project) => (
-              <div
-                key={project.id}
-                className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-xl transition-shadow duration-300"
-              >
-                <div className="relative h-48">
-                  <Image
-                    src={project.image}
-                    alt={project.title}
-                    fill
-                    className="object-cover"
-                  />
+          <div className="text-center mb-10 relative">
+            {portfolioEditMode ? (
+              <>
+                <input
+                  className="text-4xl font-bold mb-4 text-gray-900 w-full border rounded px-2 py-1 text-center"
+                  value={portfolioSectionDraft.title}
+                  onChange={e => setPortfolioSectionDraft({...portfolioSectionDraft, title: e.target.value})}
+                />
+                <input
+                  className="text-xl text-gray-600 w-full border rounded px-2 py-1 text-center"
+                  value={portfolioSectionDraft.desc}
+                  onChange={e => setPortfolioSectionDraft({...portfolioSectionDraft, desc: e.target.value})}
+                />
+              </>
+            ) : (
+              <>
+                <h2 className="text-4xl font-bold text-center mb-2">{portfolioSectionEdit.title}</h2>
+                <p className="text-center text-gray-500 mb-10">{portfolioSectionEdit.desc}</p>
+              </>
+            )}
+            {isAdmin && (
+              <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                {portfolioEditMode ? (
+                  <div className="flex gap-2">
+                    <button onClick={async () => {
+                      setPortfolioSectionEdit(portfolioSectionDraft);
+                      setPortfolioEditMode(false);
+                      setPortfolioSaveMsg('저장되었습니다!');
+                      setTimeout(() => setPortfolioSaveMsg(''), 2000);
+                    }} className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-600 transition-all">
+                      저장
+                    </button>
+                    <button onClick={() => { setPortfolioEditMode(false); setPortfolioSectionDraft(portfolioSectionEdit) }} className="bg-gray-500 text-white px-4 py-2 rounded shadow-lg hover:bg-gray-600 transition-all">
+                      취소
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setPortfolioEditMode(true)} 
+                    className="bg-yellow-400 text-black px-4 py-2 rounded shadow-lg hover:bg-yellow-500 transition-all"
+                  >
+                    수정
+                  </button>
+                )}
+              </div>
+            )}
+            {portfolioSaveMsg && <div className="text-green-500 mt-2">{portfolioSaveMsg}</div>}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+            {portfolioItems.slice(0, 4).map((item, idx) => (
+              <div key={item.id} className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition">
+                <div className="relative h-64">
+                  <Image src={item.image} alt={item.title} fill className="object-contain" />
+                  {idx === 0 && (
+                    <span className="absolute top-4 right-4 bg-gray-700 text-white text-xs px-3 py-1 rounded">NEW</span>
+                  )}
                 </div>
-                <div className="p-6">
-                  <h3 className="text-xl font-semibold mb-2">{project.title}</h3>
-                  <p className="text-gray-600 mb-4">{project.period}</p>
-                  <p className="text-gray-700 mb-4 line-clamp-2">{project.overview}</p>
+                <div className="p-6 text-center">
+                  <h3 className="text-xl font-semibold mb-2">{item.title} {idx === 0 && <span className="text-red-500">❤</span>}</h3>
+                  <p className="text-gray-500 text-sm">{item.overview}</p>
                 </div>
               </div>
             ))}
-          </div>
-          <div className="flex justify-center">
-            <Link href="/portfolio" className="inline-block bg-[#222831] text-[#DFD0B8] px-8 py-3 rounded-lg font-semibold hover:bg-[#948979] hover:text-[#222831] transition-colors shadow-md">더보기</Link>
           </div>
         </div>
       </section>

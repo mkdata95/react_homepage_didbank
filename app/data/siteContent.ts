@@ -672,7 +672,7 @@ export const siteContent = {
     ]
   },
   "photoSection": {
-    "title": "사진고1111",
-    "desc": "다온테마의 다양한 사진을 소개합니다111111."
+    "title": "OUR BUSINESS",
+    "desc": "당사의 다양한 사업 영역을 소개합니다."
   }
 }
