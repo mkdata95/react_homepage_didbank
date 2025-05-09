@@ -20,6 +20,7 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
   const [loginPw, setLoginPw] = useState('')
   const [loginError, setLoginError] = useState('')
   const [showTopBar, setShowTopBar] = useState(true)
+  const [isCustomerMenuOpen, setIsCustomerMenuOpen] = useState(false)
 
   useEffect(() => {
     // 쿠키에서 로그인 상태 확인
@@ -109,7 +110,47 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
               <li className="hover:text-violet-400 cursor-pointer"><Link href="/portfolio">주요실적</Link></li>
               <li className="hover:text-violet-400 cursor-pointer"><Link href="/downloads">자료다운로드</Link></li>
               <li className="hover:text-violet-400 cursor-pointer"><Link href="/location">오시는길</Link></li>
-              <li className="hover:text-violet-400 cursor-pointer"><Link href="/contact">문의하기</Link></li>
+              {/* 고객센터 드롭다운 메뉴 */}
+              <li
+                className="relative"
+                onMouseEnter={() => setIsCustomerMenuOpen(true)}
+                onMouseLeave={() => setIsCustomerMenuOpen(false)}
+              >
+                <button
+                  className="flex items-center text-white hover:text-violet-400"
+                  onClick={() => setIsCustomerMenuOpen(!isCustomerMenuOpen)}
+                  type="button"
+                >
+                  고객센터
+                  <svg className="w-4 h-4 ml-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </button>
+                {isCustomerMenuOpen && (
+                  <>
+                    {/* 투명 브릿지 영역 */}
+                    <div className="absolute left-0 top-full w-48 h-4" />
+                    <div className="absolute left-0 top-full mt-1 w-48 bg-white rounded-lg shadow-lg overflow-visible z-[9999]">
+                      <div className="py-1">
+                        <Link
+                          href="/customer/notice"
+                          className="block px-4 py-2 text-gray-800 hover:bg-gray-100 hover:text-violet-600"
+                          onClick={() => setIsCustomerMenuOpen(false)}
+                        >
+                          공지사항
+                        </Link>
+                        <Link
+                          href="/contact"
+                          className="block px-4 py-2 text-gray-800 hover:bg-gray-100 hover:text-violet-600"
+                          onClick={() => setIsCustomerMenuOpen(false)}
+                        >
+                          문의하기
+                        </Link>
+                      </div>
+                    </div>
+                  </>
+                )}
+              </li>
               {isLoggedIn && (
                 <li className="hover:text-violet-400 cursor-pointer"><Link href="/admin">관리자</Link></li>
               )}
