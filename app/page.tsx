@@ -1,6 +1,6 @@
 "use client"
 
-import { siteContent } from './data/siteContent'
+import { siteContent as initialSiteContent } from './data/siteContent'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useEffect, useState } from 'react'
@@ -181,27 +181,35 @@ interface PortfolioItem {
   // 필요시 추가 필드
 }
 
+interface PhotoCard {
+  id?: number;
+  image: string;
+  title: string;
+  desc: string;
+}
+
 export default function Home() {
   // 관리자 로그인 여부 확인
   const [isAdmin, setIsAdmin] = useState(false)
   const [editMode, setEditMode] = useState(false)
   const [heroForm, setHeroForm] = useState({
-    title: siteContent.hero.title,
-    titleHighlight: siteContent.hero.titleHighlight,
-    description: siteContent.hero.description,
+    title: initialSiteContent.hero.title,
+    titleHighlight: initialSiteContent.hero.titleHighlight,
+    description: initialSiteContent.hero.description,
+    bgImage: initialSiteContent.hero.bgImage || '/images/hero-default.jpg',
   })
   const [aboutEditMode, setAboutEditMode] = useState(false)
   const [aboutForm, setAboutForm] = useState({
-    title: siteContent.about.title,
-    visionTitle: siteContent.about.vision.title,
-    visionContent: [...siteContent.about.vision.content],
-    valuesTitle: siteContent.about.values.title,
-    valuesItems: [...siteContent.about.values.items],
+    title: initialSiteContent.about.title,
+    visionTitle: initialSiteContent.about.vision.title,
+    visionContent: [...initialSiteContent.about.vision.content],
+    valuesTitle: initialSiteContent.about.values.title,
+    valuesItems: [...initialSiteContent.about.values.items],
   })
   const [servicesEditMode, setServicesEditMode] = useState(false)
   const [servicesForm, setServicesForm] = useState({
-    title: siteContent.services.title,
-    items: siteContent.services.items.map(item => ({ ...item })),
+    title: initialSiteContent.services.title,
+    items: initialSiteContent.services.items.map(item => ({ ...item })),
   })
   const [saveMsg, setSaveMsg] = useState('')
   const [aboutSaveMsg, setAboutSaveMsg] = useState('')
@@ -209,6 +217,38 @@ export default function Home() {
   const [iconModalIdx, setIconModalIdx] = useState(-1)
   const [iconSearch, setIconSearch] = useState('')
   const [portfolioItems, setPortfolioItems] = useState<PortfolioItem[]>([])
+  // 사진고 카드 인라인 수정 상태
+  const [photoEditMode, setPhotoEditMode] = useState(false)
+  const [photoCards, setPhotoCards] = useState<PhotoCard[]>([])
+  const [photoCardsDraft, setPhotoCardsDraft] = useState<PhotoCard[]>([])
+  const [photoSaveMsg, setPhotoSaveMsg] = useState('')
+  // 사진고 섹션 제목/설명 인라인 수정 상태
+  const [photoSectionEdit, setPhotoSectionEdit] = useState({
+    title: initialSiteContent.photoSection?.title || '사진고',
+    desc: initialSiteContent.photoSection?.desc || '다온테마의 다양한 사진을 소개합니다.'
+  })
+  const [photoSectionDraft, setPhotoSectionDraft] = useState({
+    title: initialSiteContent.photoSection?.title || '사진고',
+    desc: initialSiteContent.photoSection?.desc || '다온테마의 다양한 사진을 소개합니다.'
+  })
+
+  // 서버에서 동적으로 불러오기
+  useEffect(() => {
+    fetch('/api/save-content')
+      .then(res => res.json())
+      .then(data => {
+        if (data && data.photoSection) {
+          setPhotoSectionEdit({
+            title: data.photoSection.title || '사진고',
+            desc: data.photoSection.desc || '다온테마의 다양한 사진을 소개합니다.'
+          })
+          setPhotoSectionDraft({
+            title: data.photoSection.title || '사진고',
+            desc: data.photoSection.desc || '다온테마의 다양한 사진을 소개합니다.'
+          })
+        }
+      })
+  }, [])
 
   useEffect(() => {
     const cookies = document.cookie.split(';').map(c => c.trim())
@@ -224,6 +264,16 @@ export default function Home() {
       });
   }, [])
 
+  // 사진고 카드 DB에서 불러오기
+  useEffect(() => {
+    fetch('/api/photo-cards')
+      .then(res => res.json())
+      .then(data => {
+        setPhotoCards(data)
+        setPhotoCardsDraft(data)
+      })
+  }, [])
+
   const handleHeroSave = async () => {
     setSaveMsg('저장 중...')
     try {
@@ -231,9 +281,9 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...siteContent,
+          ...initialSiteContent,
           hero: {
-            ...siteContent.hero,
+            ...initialSiteContent.hero,
             ...heroForm,
           },
         }),
@@ -257,17 +307,17 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...siteContent,
+          ...initialSiteContent,
           about: {
-            ...siteContent.about,
+            ...initialSiteContent.about,
             title: aboutForm.title,
             vision: {
-              ...siteContent.about.vision,
+              ...initialSiteContent.about.vision,
               title: aboutForm.visionTitle,
               content: aboutForm.visionContent,
             },
             values: {
-              ...siteContent.about.values,
+              ...initialSiteContent.about.values,
               title: aboutForm.valuesTitle,
               items: aboutForm.valuesItems,
             },
@@ -293,9 +343,9 @@ export default function Home() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          ...siteContent,
+          ...initialSiteContent,
           services: {
-            ...siteContent.services,
+            ...initialSiteContent.services,
             title: servicesForm.title,
             items: servicesForm.items,
           },
@@ -313,10 +363,75 @@ export default function Home() {
     setTimeout(() => setServicesSaveMsg(''), 2000)
   }
 
+  const handlePhotoSave = async () => {
+    setPhotoSaveMsg('저장 중...')
+    try {
+      // 각 카드별로 PUT 또는 POST
+      for (const card of photoCardsDraft) {
+        if (card.id) {
+          await fetch('/api/photo-cards', {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(card),
+          })
+        } else {
+          await fetch('/api/photo-cards', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(card),
+          })
+        }
+      }
+
+      // 사진고 섹션 제목/설명 저장
+      await fetch('/api/save-content', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...initialSiteContent,
+          photoSection: {
+            title: photoSectionDraft.title,
+            desc: photoSectionDraft.desc,
+          },
+        }),
+      })
+
+      // 저장 후 다시 불러오기
+      const res = await fetch('/api/photo-cards')
+      const data = await res.json()
+      setPhotoCards(data)
+      setPhotoCardsDraft(data)
+      setPhotoSectionEdit(photoSectionDraft)
+      setPhotoEditMode(false)
+      setPhotoSaveMsg('저장되었습니다!')
+    } catch {
+      setPhotoSaveMsg('저장 실패')
+    }
+    setTimeout(() => setPhotoSaveMsg(''), 2000)
+  }
+
+  const handlePhotoFileChange = async (e: React.ChangeEvent<HTMLInputElement>, idx: number) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const formData = new FormData();
+      formData.append('file', file);
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.fileUrl) {
+        const next = [...photoCardsDraft];
+        next[idx].image = data.fileUrl;
+        setPhotoCardsDraft(next);
+      }
+    }
+  }
+
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-blue-800 to-blue-600">
+      <section className="relative h-screen flex items-center justify-center bg-gradient-to-br from-indigo-900 via-blue-800 to-blue-600" style={{ backgroundImage: `url(${heroForm.bgImage || initialSiteContent.hero.bgImage})`, backgroundSize: 'cover', backgroundPosition: 'center' }}>
         <div className="absolute inset-0 bg-black opacity-40"></div>
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center text-white">
@@ -338,25 +453,58 @@ export default function Home() {
                   onChange={e => setHeroForm(f => ({ ...f, description: e.target.value }))}
                   rows={3}
                 />
+                {/* 배경 이미지 업로드 및 URL 입력 */}
+                <div className="mb-4 flex flex-col items-center gap-2">
+                  <label className="font-semibold">배경 이미지</label>
+                  <input
+                    type="text"
+                    className="w-full px-2 py-1 rounded border"
+                    placeholder="이미지 URL 입력 또는 파일 업로드"
+                    value={heroForm.bgImage}
+                    onChange={e => setHeroForm(f => ({ ...f, bgImage: e.target.value }))}
+                  />
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={async e => {
+                      const file = e.target.files?.[0];
+                      if (file) {
+                        const formData = new FormData();
+                        formData.append('file', file);
+                        const res = await fetch('/api/upload', {
+                          method: 'POST',
+                          body: formData,
+                        });
+                        const data = await res.json();
+                        if (data.fileUrl) {
+                          setHeroForm(f => ({ ...f, bgImage: data.fileUrl }));
+                        }
+                      }
+                    }}
+                  />
+                  {heroForm.bgImage && (
+                    <img src={heroForm.bgImage} alt="미리보기" className="w-64 h-32 object-cover rounded border mt-2" />
+                  )}
+                </div>
                 <div className="flex gap-2 justify-center mb-4">
                   <button onClick={handleHeroSave} className="bg-blue-600 text-white px-6 py-2 rounded">저장</button>
-                  <button onClick={() => { setEditMode(false); setHeroForm({ title: siteContent.hero.title, titleHighlight: siteContent.hero.titleHighlight, description: siteContent.hero.description }) }} className="bg-gray-400 text-white px-6 py-2 rounded">취소</button>
+                  <button onClick={() => { setEditMode(false); setHeroForm({ title: initialSiteContent.hero.title, titleHighlight: initialSiteContent.hero.titleHighlight, description: initialSiteContent.hero.description, bgImage: initialSiteContent.hero.bgImage || '/images/hero-default.jpg' }) }} className="bg-gray-400 text-white px-6 py-2 rounded">취소</button>
                 </div>
                 {saveMsg && <div className="text-green-200 mb-2">{saveMsg}</div>}
               </>
             ) : (
               <>
                 <h1 className="text-7xl font-bold mb-8 leading-tight">
-                  {siteContent.hero.title.split('\n').map((line, i) => (
+                  {initialSiteContent.hero.title.split('\n').map((line, i) => (
                     <span key={i}>
                       {line}
                       {i === 0 && <br />}
                     </span>
                   ))}
-                  <span className="text-blue-300">{siteContent.hero.titleHighlight}</span>
+                  <span className="text-blue-300">{initialSiteContent.hero.titleHighlight}</span>
                 </h1>
                 <p className="text-2xl mb-12 text-gray-100">
-                  {siteContent.hero.description.split('\n').map((line, i) => (
+                  {initialSiteContent.hero.description.split('\n').map((line, i) => (
                     <span key={i}>
                       {line}
                       {i === 0 && <br />}
@@ -374,15 +522,156 @@ export default function Home() {
                 href="/portfolio"
                 className="inline-block bg-white text-blue-600 px-10 py-4 rounded-full font-semibold hover:bg-blue-50 transition-all transform hover:scale-105 shadow-lg"
               >
-                {siteContent.hero.primaryButton.replace('서비스 살펴보기', '주요실적')}
+                {initialSiteContent.hero.primaryButton.replace('서비스 살펴보기', '주요실적')}
               </Link>
               <a
                 href="/contact"
                 className="inline-block bg-transparent border-2 border-white text-white px-10 py-4 rounded-full font-semibold hover:bg-white/10 transition-all transform hover:scale-105"
               >
-                {siteContent.hero.secondaryButton}
+                {initialSiteContent.hero.secondaryButton}
               </a>
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* 사진고 섹션 (OUR BUSINESS 카드와 동일 디자인) */}
+      <section className="py-20 bg-gray-50">
+        <div className="container mx-auto px-4">
+          <div className="text-center mb-16 relative">
+            {photoEditMode ? (
+              <>
+                <input
+                  className="text-4xl font-bold mb-4 text-gray-900 w-full border rounded px-2 py-1 text-center"
+                  value={photoSectionDraft.title}
+                  onChange={e => setPhotoSectionDraft({...photoSectionDraft, title: e.target.value})}
+                />
+                <input
+                  className="text-xl text-gray-600 w-full border rounded px-2 py-1 text-center"
+                  value={photoSectionDraft.desc}
+                  onChange={e => setPhotoSectionDraft({...photoSectionDraft, desc: e.target.value})}
+                />
+              </>
+            ) : (
+              <>
+                <h2 className="text-4xl font-bold mb-4 text-gray-900">{photoSectionEdit.title}</h2>
+                <p className="text-xl text-gray-600">{photoSectionEdit.desc}</p>
+              </>
+            )}
+            {isAdmin && (
+              <div className="absolute right-0 top-1/2 -translate-y-1/2">
+                {photoEditMode ? (
+                  <div className="flex gap-2">
+                    <button onClick={handlePhotoSave} className="bg-blue-500 text-white px-4 py-2 rounded shadow-lg hover:bg-blue-600 transition-all">
+                      저장
+                    </button>
+                    <button onClick={() => { setPhotoEditMode(false); setPhotoSectionDraft(photoSectionEdit) }} className="bg-gray-500 text-white px-4 py-2 rounded shadow-lg hover:bg-gray-600 transition-all">
+                      취소
+                    </button>
+                  </div>
+                ) : (
+                  <button 
+                    onClick={() => setPhotoEditMode(true)} 
+                    className="bg-yellow-400 text-black px-4 py-2 rounded shadow-lg hover:bg-yellow-500 transition-all"
+                  >
+                    수정
+                  </button>
+                )}
+              </div>
+            )}
+            {photoSaveMsg && <div className="text-green-500 mt-2">{photoSaveMsg}</div>}
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-7xl mx-auto">
+            {photoEditMode ? (
+              photoCardsDraft.length === 0 ? (
+                <div className="col-span-full flex flex-col items-center justify-center py-24">
+                  <div className="text-gray-400 text-xl mb-6">아직 등록된 사진이 없습니다.<br/>+ 버튼을 눌러 새 카드를 추가하세요.</div>
+                  <button
+                    className="w-16 h-16 rounded-full border-2 border-gray-400 flex items-center justify-center text-3xl text-gray-500 hover:bg-gray-100 transition-all"
+                    onClick={() => setPhotoCardsDraft([{ image: '', title: '', desc: '' }, ...photoCardsDraft])}
+                  >
+                    +
+                  </button>
+                </div>
+              ) : (
+                <>
+                  {photoCardsDraft.map((card, idx) => (
+                    <div key={idx} className="relative flex flex-col items-center mx-2" style={{ width: 400 }}>
+                      {/* 배경 이미지 */}
+                      <div className="h-[340px] w-full rounded-lg overflow-hidden">
+                        <Image src={card.image || '/images/placeholder.png'} alt={card.title} width={400} height={340} className="object-cover w-full h-full" />
+                        <label className="absolute top-4 right-4 z-10 cursor-pointer bg-white/80 px-3 py-1 rounded text-sm hover:bg-white transition-all">
+                          이미지 선택
+                          <input
+                            type="file"
+                            accept="image/*"
+                            style={{ display: 'none' }}
+                            onChange={e => handlePhotoFileChange(e, idx)}
+                          />
+                        </label>
+                      </div>
+                      {/* 텍스트 카드: 위로 겹치게 */}
+                      <div className="z-10 bg-white rounded-lg w-[400px] min-w-[400px] max-w-[400px] h-[180px] px-8 py-8 text-center -mt-12 flex flex-col justify-center">
+                        <input
+                          className="text-xl font-bold mb-2 w-full text-center bg-transparent border-none focus:ring-0 break-words whitespace-normal overflow-hidden"
+                          value={card.title}
+                          onChange={e => {
+                            const next = [...photoCardsDraft];
+                            next[idx].title = e.target.value;
+                            setPhotoCardsDraft(next);
+                          }}
+                        />
+                        <textarea
+                          className="text-gray-500 text-base w-full text-center bg-transparent border-none focus:ring-0 break-words overflow-auto resize-none"
+                          value={card.desc}
+                          onChange={e => {
+                            const next = [...photoCardsDraft];
+                            next[idx].desc = e.target.value;
+                            setPhotoCardsDraft(next);
+                          }}
+                          rows={2}
+                        />
+                      </div>
+                      {/* + 버튼 */}
+                      <div className="w-full flex justify-center pb-8">
+                        <button
+                          className="w-12 h-12 rounded-full border flex items-center justify-center text-2xl"
+                          onClick={() => setPhotoCardsDraft([{ image: '', title: '', desc: '' }, ...photoCardsDraft])}
+                        >
+                          +
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </>
+              )
+            ) : (
+              photoCards.length === 0 ? (
+                <div className="col-span-full flex flex-col items-center justify-center py-24">
+                  <div className="text-gray-400 text-xl mb-6">아직 등록된 사진이 없습니다.</div>
+                </div>
+              ) : (
+                photoCards.map((card, idx) => (
+                  <div key={idx} className="relative flex flex-col items-center mx-2" style={{ width: 400 }}>
+                    {/* 배경 이미지 */}
+                    <div className="h-[340px] w-full rounded-lg overflow-hidden">
+                      <Image src={card.image || '/images/placeholder.png'} alt={card.title} width={400} height={340} className="object-cover w-full h-full" />
+                    </div>
+                    {/* 텍스트 카드: 위로 겹치게 */}
+                    <div className="z-10 bg-white rounded-lg w-[400px] min-w-[400px] max-w-[400px] h-[180px] px-8 py-8 text-center -mt-12 flex flex-col justify-center">
+                      <h3 className="text-xl font-bold mb-2 w-full break-words whitespace-normal overflow-hidden">{card.title}</h3>
+                      <p className="text-gray-500 text-base w-full break-words overflow-hidden line-clamp-2">{card.desc}</p>
+                    </div>
+                    {/* + 버튼 */}
+                    <div className="w-full flex justify-center pb-8">
+                      <button className="w-12 h-12 rounded-full border flex items-center justify-center text-2xl" style={{ visibility: 'hidden' }}>
+                        +
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )
+            )}
           </div>
         </div>
       </section>
@@ -446,25 +735,25 @@ export default function Home() {
                 </div>
                 <div className="flex gap-2 justify-center mt-6">
                   <button onClick={handleAboutSave} className="bg-blue-600 text-white px-6 py-2 rounded">저장</button>
-                  <button onClick={() => { setAboutEditMode(false); setAboutForm({ title: siteContent.about.title, visionTitle: siteContent.about.vision.title, visionContent: [...siteContent.about.vision.content], valuesTitle: siteContent.about.values.title, valuesItems: [...siteContent.about.values.items] }) }} className="bg-gray-400 text-white px-6 py-2 rounded">취소</button>
+                  <button onClick={() => { setAboutEditMode(false); setAboutForm({ title: initialSiteContent.about.title, visionTitle: initialSiteContent.about.vision.title, visionContent: [...initialSiteContent.about.vision.content], valuesTitle: initialSiteContent.about.values.title, valuesItems: [...initialSiteContent.about.values.items] }) }} className="bg-gray-400 text-white px-6 py-2 rounded">취소</button>
                 </div>
                 {aboutSaveMsg && <div className="text-green-600 mb-2">{aboutSaveMsg}</div>}
               </>
             ) : (
               <>
-                <h2 className="text-5xl font-bold text-center mb-20 text-gray-900">{siteContent.about.title}</h2>
+                <h2 className="text-5xl font-bold text-center mb-20 text-gray-900">{initialSiteContent.about.title}</h2>
                 <div className="w-full mt-12">
                   <div className="flex flex-row w-full gap-6">
                     {/* Our Vision 카드 */}
                     <div className="flex-[2] bg-white rounded-xl shadow p-6 flex flex-col items-start justify-start">
                       <h3 className="text-2xl font-bold text-blue-800 mb-4 text-left">Our Vision</h3>
-                      <p className="text-gray-900 text-lg text-left mb-2">{siteContent.about.vision.content[0]}</p>
+                      <p className="text-gray-900 text-lg text-left mb-2">{initialSiteContent.about.vision.content[0]}</p>
                     </div>
                     {/* Core Values 1 카드 */}
                     <div className="flex-1 bg-white rounded-xl shadow p-6 flex flex-col items-start justify-start">
                       <h3 className="text-xl font-bold text-blue-800 mb-4 text-left">Core Values 1</h3>
                       <ul className="list-disc pl-5 text-gray-900 text-lg text-left w-full mb-2">
-                        {siteContent.about.values.items[0]
+                        {initialSiteContent.about.values.items[0]
                           .split('\n')
                           .filter(line => line.trim() !== '')
                           .map((line, idx) => (
@@ -476,7 +765,7 @@ export default function Home() {
                     <div className="flex-1 bg-white rounded-xl shadow p-6 flex flex-col items-start justify-start">
                       <h3 className="text-xl font-bold text-blue-800 mb-4 text-left">Core Values 2</h3>
                       <ul className="list-disc pl-5 text-gray-900 text-lg text-left w-full mb-2">
-                        {siteContent.about.values.items[1]
+                        {initialSiteContent.about.values.items[1]
                           .split('\n')
                           .filter(line => line.trim() !== '')
                           .map((line, idx) => (
@@ -598,15 +887,16 @@ export default function Home() {
               </div>
               <div className="flex gap-2 justify-center mt-8">
                 <button onClick={handleServicesSave} className="bg-blue-600 text-white px-6 py-2 rounded">저장</button>
-                <button onClick={() => { setServicesEditMode(false); setServicesForm({ title: siteContent.services.title, items: siteContent.services.items.map(item => ({ ...item })) }) }} className="bg-gray-400 text-white px-6 py-2 rounded">취소</button>
+                <button onClick={() => { setServicesEditMode(false); setServicesForm({ title: initialSiteContent.services.title, items: initialSiteContent.services.items.map(item => ({ ...item })) }) }} className="bg-gray-400 text-white px-6 py-2 rounded">취소</button>
               </div>
               {servicesSaveMsg && <div className="text-green-600 mb-2">{servicesSaveMsg}</div>}
             </>
           ) : (
             <>
-              <h2 className="text-5xl font-bold text-center mb-20 text-gray-900">{siteContent.services.title}</h2>
+              <h2 className="text-5xl font-bold text-center mb-6 text-gray-900">{initialSiteContent.services.title}</h2>
+              <p className="text-center text-gray-400 mb-6 text-xl">당사의 다양한 사업 영역을 소개합니다.</p>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-10 max-w-7xl mx-auto">
-                {siteContent.services.items.map((service, i) => (
+                {initialSiteContent.services.items.map((service, i) => (
                   <div key={i} className="bg-white p-10 rounded-2xl shadow-xl hover:shadow-2xl transition-all transform hover:-translate-y-2">
                     <div className="w-20 h-20 bg-blue-100 rounded-2xl flex items-center justify-center mb-8">
                       <div className="w-10 h-10 text-blue-600">
@@ -632,7 +922,7 @@ export default function Home() {
       {/* 주요 실적 미리보기 (4개 + 더보기) */}
       <section className="py-20 bg-white">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">{siteContent.projects.title}</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">{initialSiteContent.projects.title}</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-8">
             {portfolioItems.slice(0, 4).map((project) => (
               <div

@@ -1,0 +1,37 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model About {
+  id        Int    @id @default(autoincrement())
+  title     String
+  vision    String
+  values    String
+}
+
+model Service {
+  id          Int    @id @default(autoincrement())
+  title       String
+  description String
+  icon        String
+}
+
+model PhotoCard {
+  id      Int    @id @default(autoincrement())
+  title   String
+  desc    String
+  image   String
+}
+
+model Portfolio {
+  id      Int    @id @default(autoincrement())
+  title   String
+  period  String
+  overview String
+  image   String
+} 
