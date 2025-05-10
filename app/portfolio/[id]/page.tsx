@@ -5,6 +5,7 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { FiHome, FiChevronRight, FiShare2, FiEdit2, FiSave, FiX } from 'react-icons/fi'
 import dynamic from 'next/dynamic'
+import { siteContent } from '../../../data/siteContent'
 
 const RichTextEditor = dynamic(() => import('@/components/RichTextEditor'), { ssr: false })
 
@@ -20,6 +21,7 @@ interface Project {
   category: string;
   gallery?: any[];
   size?: string;
+  description: string;
 }
 
 export default function PortfolioDetail({ params }: { params: { id: string } }) {
@@ -32,8 +34,9 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
   const [isSaving, setIsSaving] = useState(false)
   
   // 편집 상태를 위한 임시 데이터
-  const [editedPortfolio, setEditedPortfolio] = useState<Project | null>(null)
+  const [editedContent, setEditedContent] = useState('')
   const [newImage, setNewImage] = useState<File | null>(null)
+  const [saveMessage, setSaveMessage] = useState('')
 
   // 이미지 리사이징 및 최적화 함수
   const resizeAndOptimizeImage = async (file: File, maxWidth = 1920, maxHeight = 1080, quality = 0.8): Promise<string> => {
@@ -100,8 +103,14 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
         }
         
         console.log('Portfolio data received:', data)
-        setPortfolio(data)
-        setEditedPortfolio(data) // 편집 상태용 데이터 초기화
+        const description = typeof data.details === 'string' 
+          ? data.details 
+          : JSON.stringify(data.details)
+        setPortfolio({
+          ...data,
+          description
+        })
+        setEditedContent(description)
       } catch (err: any) {
         console.error('포트폴리오 데이터 가져오기 오류:', err)
         setError(err.message || '포트폴리오 데이터를 불러오는 중 오류가 발생했습니다')
@@ -115,20 +124,21 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
 
   // 저장 함수
   const handleSave = async () => {
-    if (!editedPortfolio) return;
+    if (!portfolio) return;
     
+    setIsSaving(true)
+    setSaveMessage('저장 중...')
     try {
-      setIsSaving(true);
-      
       // 이미지가 변경되었으면 최적화
-      let updatedImage = editedPortfolio.image;
+      let updatedImage = portfolio.image;
       if (newImage) {
         updatedImage = await resizeAndOptimizeImage(newImage);
       }
       
       const updatedPortfolio = {
-        ...editedPortfolio,
-        image: updatedImage
+        ...portfolio,
+        image: updatedImage,
+        description: editedContent
       };
       
       const response = await fetch('/api/portfolio', {
@@ -141,22 +151,22 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
         setPortfolio(updatedPortfolio);
         setIsEditing(false);
         setNewImage(null);
-        alert('성공적으로 저장되었습니다.');
+        setSaveMessage('저장되었습니다!')
       } else {
         const errorData = await response.json();
         throw new Error(errorData.error || '저장 중 오류가 발생했습니다.');
       }
     } catch (error: any) {
       console.error('저장 오류:', error);
-      alert(`저장 실패: ${error.message}`);
+      setSaveMessage('오류가 발생했습니다.')
     } finally {
-      setIsSaving(false);
+      setIsSaving(false)
+      setTimeout(() => setSaveMessage(''), 3000)
     }
   };
   
   // 취소 함수
   const handleCancel = () => {
-    setEditedPortfolio(portfolio);
     setIsEditing(false);
     setNewImage(null);
   };
@@ -190,7 +200,7 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
   }
 
   // 갤러리 이미지 목록 (메인 이미지 + 갤러리 이미지)
-  const portfolioToShow = isEditing ? editedPortfolio : portfolio;
+  const portfolioToShow = isEditing ? portfolio : portfolio;
   const allImages = [
     portfolioToShow?.image,
     ...(portfolioToShow?.gallery?.map((item: any) => typeof item === 'string' ? item : item.image) || [])
@@ -219,8 +229,8 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
         {isEditing ? (
           <input
             type="text"
-            value={editedPortfolio?.title || ''}
-            onChange={(e) => setEditedPortfolio({...editedPortfolio!, title: e.target.value})}
+            value={portfolioToShow?.title || ''}
+            onChange={(e) => setPortfolio({...portfolioToShow!, title: e.target.value})}
             className="w-full text-center border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
           />
         ) : (
@@ -231,8 +241,8 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
       <p className="text-center text-gray-500 mb-12">
         {isEditing ? (
           <textarea
-            value={editedPortfolio?.overview || ''}
-            onChange={(e) => setEditedPortfolio({...editedPortfolio!, overview: e.target.value})}
+            value={portfolioToShow?.overview || ''}
+            onChange={(e) => setPortfolio({...portfolioToShow!, overview: e.target.value})}
             className="w-full text-center border border-gray-300 rounded p-2 focus:outline-none focus:border-blue-500"
             rows={2}
           />
@@ -250,7 +260,7 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
               <div className="absolute inset-0 flex items-center justify-center">
                 <Image
                   src={allImages[selectedThumbnail] || '/images/default-portfolio.jpg'}
-                  alt={editedPortfolio?.title || ''}
+                  alt={portfolioToShow?.title || ''}
                   fill
                   style={{ objectFit: 'contain' }}
                   unoptimized={allImages[selectedThumbnail]?.startsWith('data:')}
@@ -266,7 +276,7 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
                         if (e.target.files && e.target.files[0]) {
                           setNewImage(e.target.files[0]);
                           const newUrl = URL.createObjectURL(e.target.files[0]);
-                          setEditedPortfolio({...editedPortfolio!, image: newUrl});
+                          setPortfolio({...portfolioToShow!, image: newUrl});
                         }
                       }}
                     />
@@ -324,8 +334,8 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
                     {isEditing ? (
                       <input
                         type="text"
-                        value={editedPortfolio?.client || ''}
-                        onChange={(e) => setEditedPortfolio({...editedPortfolio!, client: e.target.value})}
+                        value={portfolioToShow?.client || ''}
+                        onChange={(e) => setPortfolio({...portfolioToShow!, client: e.target.value})}
                         className="w-full border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
                         placeholder="-"
                       />
@@ -340,8 +350,8 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
                     {isEditing ? (
                       <input
                         type="text"
-                        value={editedPortfolio?.size || 'Desktop 1200 - Mobile 360'}
-                        onChange={(e) => setEditedPortfolio({...editedPortfolio!, size: e.target.value})}
+                        value={portfolioToShow?.size || 'Desktop 1200 - Mobile 360'}
+                        onChange={(e) => setPortfolio({...portfolioToShow!, size: e.target.value})}
                         className="w-full border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
                         placeholder="Desktop 1200 - Mobile 360"
                       />
@@ -356,8 +366,8 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
                     {isEditing ? (
                       <input
                         type="text"
-                        value={editedPortfolio?.category || ''}
-                        onChange={(e) => setEditedPortfolio({...editedPortfolio!, category: e.target.value})}
+                        value={portfolioToShow?.category || ''}
+                        onChange={(e) => setPortfolio({...portfolioToShow!, category: e.target.value})}
                         className="w-full border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
                         placeholder="기업형 디자인"
                       />
@@ -372,8 +382,8 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
                     {isEditing ? (
                       <input
                         type="text"
-                        value={editedPortfolio?.role || ''}
-                        onChange={(e) => setEditedPortfolio({...editedPortfolio!, role: e.target.value})}
+                        value={portfolioToShow?.role || ''}
+                        onChange={(e) => setPortfolio({...portfolioToShow!, role: e.target.value})}
                         className="w-full border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
                         placeholder="반응형+모던 스타일"
                       />
@@ -389,8 +399,8 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
               {isEditing ? (
                 <input
                   type="text"
-                  value={editedPortfolio?.title || ''}
-                  onChange={(e) => setEditedPortfolio({...editedPortfolio!, title: e.target.value})}
+                  value={portfolioToShow?.title || ''}
+                  onChange={(e) => setPortfolio({...portfolioToShow!, title: e.target.value})}
                   className="w-full border-b border-gray-300 focus:outline-none focus:border-blue-500 bg-transparent"
                 />
               ) : (
@@ -401,8 +411,8 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
             <p className="text-gray-600 mb-6">
               {isEditing ? (
                 <textarea
-                  value={editedPortfolio?.overview || ''}
-                  onChange={(e) => setEditedPortfolio({...editedPortfolio!, overview: e.target.value})}
+                  value={portfolioToShow?.overview || ''}
+                  onChange={(e) => setPortfolio({...portfolioToShow!, overview: e.target.value})}
                   className="w-full border border-gray-300 rounded p-2 focus:outline-none focus:border-blue-500"
                   rows={3}
                 />
@@ -439,20 +449,33 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
       <div className="mb-12">
         <h2 className="text-xl font-semibold border-b border-gray-200 pb-2 mb-4">설치사래 정보안내</h2>
         {isEditing ? (
-          <div className="prose max-w-none">
+          <div className="space-y-4">
             <RichTextEditor
-              value={typeof editedPortfolio?.details === 'string' ? editedPortfolio.details : editedPortfolio?.details?.join('\n') || ''}
-              onChange={(content) => setEditedPortfolio({...editedPortfolio!, details: content})}
+              value={editedContent}
+              onChange={setEditedContent}
             />
+            <div className="flex justify-end gap-4">
+              <button
+                onClick={handleCancel}
+                className="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-50"
+              >
+                취소
+              </button>
+              <button
+                onClick={handleSave}
+                disabled={isSaving}
+                className="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+              >
+                {isSaving ? '저장 중...' : '저장하기'}
+              </button>
+            </div>
           </div>
         ) : (
           <div className="prose max-w-none">
-            {typeof portfolio.details === 'string' ? (
-              <div dangerouslySetInnerHTML={{ __html: portfolio.details }} />
+            {typeof portfolio.description === 'string' ? (
+              <div dangerouslySetInnerHTML={{ __html: portfolio.description }} />
             ) : (
-              portfolio.details?.map((detail: string, index: number) => (
-                <p key={index} className="text-gray-700 mb-4">{detail}</p>
-              ))
+              <div dangerouslySetInnerHTML={{ __html: portfolio.description }} />
             )}
           </div>
         )}
@@ -499,6 +522,10 @@ export default function PortfolioDetail({ params }: { params: { id: string } }) 
             )}
           </button>
         </div>
+      )}
+
+      {saveMessage && (
+        <div className="fixed bottom-8 right-8 p-4 bg-green-100 text-green-700 rounded-lg">{saveMessage}</div>
       )}
     </div>
   )

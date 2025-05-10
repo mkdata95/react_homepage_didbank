@@ -1,66 +1,59 @@
 import { NextResponse } from 'next/server'
-import sqlite3 from 'sqlite3'
-import { open } from 'sqlite'
-import path from 'path'
+import { prisma } from '@/lib/prisma'
 
 export async function GET(
   request: Request,
   { params }: { params: { id: string } }
 ) {
-  console.log('Fetching portfolio with ID:', params.id);
-  
   try {
-    // DB 연결
-    const db = await open({
-      filename: path.join(process.cwd(), 'portfolio.sqlite'),
-      driver: sqlite3.Database
+    console.log('Fetching portfolio with ID:', params.id)
+    
+    const portfolio = await prisma.portfolio.findUnique({
+      where: { id: params.id }
     })
-    
-    console.log('Database connected');
-    
-    const item = await db.get('SELECT * FROM portfolio WHERE id = ?', params.id)
-    await db.close()
 
-    if (!item) {
-      console.log('Portfolio not found with ID:', params.id);
-      return NextResponse.json({ error: '포트폴리오를 찾을 수 없습니다' }, { status: 404 })
+    if (!portfolio) {
+      return NextResponse.json({ error: '포트폴리오를 찾을 수 없습니다.' }, { status: 404 })
     }
 
-    console.log('Portfolio found, processing data');
+    console.log('Portfolio found, processing data')
     
-    // 필드 파싱 처리
-    try {
-      // 갤러리 데이터 파싱
-      if (item.gallery) {
-        try {
-          item.gallery = JSON.parse(item.gallery)
-        } catch (e) {
-          console.log('Failed to parse gallery JSON:', e);
-          item.gallery = []
-        }
-      } else {
-        item.gallery = [];
-      }
-      
-      // details 데이터 파싱
-      if (item.details) {
-        try {
-          item.details = JSON.parse(item.details)
-        } catch (e) {
-          console.log('Failed to parse details JSON, keeping as is:', e);
-          // 파싱에 실패하면 원본 문자열 유지
-        }
-      }
-    } catch (error) {
-      console.error('Error parsing portfolio data:', error)
-    }
-
-    return NextResponse.json(item)
+    // details가 HTML 문자열인 경우 그대로 반환
+    return NextResponse.json({
+      ...portfolio,
+      details: portfolio.details
+    })
   } catch (error) {
-    console.error('Error fetching portfolio:', error)
-    return NextResponse.json(
-      { error: '포트폴리오 데이터를 불러오는 중 서버 오류가 발생했습니다' }, 
-      { status: 500 }
-    )
+    console.error('포트폴리오 조회 실패:', error)
+    return NextResponse.json({ error: '포트폴리오 조회 실패' }, { status: 500 })
+  }
+}
+
+export async function PUT(
+  request: Request,
+  { params }: { params: { id: string } }
+) {
+  try {
+    const body = await request.json()
+    const { title, overview, details, image, category, client, size, role } = body
+
+    const updatedPortfolio = await prisma.portfolio.update({
+      where: { id: params.id },
+      data: {
+        title,
+        overview,
+        details, // HTML 문자열을 그대로 저장
+        image,
+        category,
+        client,
+        size,
+        role
+      }
+    })
+
+    return NextResponse.json(updatedPortfolio)
+  } catch (error) {
+    console.error('포트폴리오 업데이트 실패:', error)
+    return NextResponse.json({ error: '포트폴리오 업데이트 실패' }, { status: 500 })
   }
 } 

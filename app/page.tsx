@@ -733,7 +733,12 @@ export default function Home() {
                 )) : null
               ) : (
                 infoCards.map((card, idx) => (
-                  <div key={idx} className="flex-1 rounded-xl flex flex-col items-center justify-center p-8 min-w-[160px] relative" style={{ background: card.bgColor, overflow: 'hidden' }}>
+                  <div
+                    key={idx}
+                    className="flex-1 rounded-xl flex flex-col items-center justify-center p-8 min-w-[160px] relative cursor-pointer"
+                    style={{ background: card.bgColor, overflow: 'hidden' }}
+                    onClick={() => idx === 1 ? window.location.href = '/location' : undefined}
+                  >
                     {(card.bgImage !== undefined && card.bgImage !== '') && (
                       <img src={card.bgImage} alt="배경" className="absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none" style={{zIndex:0}} />
                     )}

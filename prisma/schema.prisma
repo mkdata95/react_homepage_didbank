@@ -8,10 +8,16 @@ datasource db {
 }
 
 model About {
-  id        Int    @id @default(autoincrement())
-  title     String
-  vision    String
-  values    String
+  id            Int    @id @default(autoincrement())
+  title         String
+  visionTitle   String
+  visionContent String
+  valuesTitle   String
+  valuesItems   String // 여러 줄 텍스트(\n으로 구분)
+  logo          String?
+  greetingsTitle String?
+  greetingsDesc  String?
+  logoAlign      String?
 }
 
 model Service {
@@ -34,6 +40,11 @@ model Portfolio {
   period  String
   overview String
   image   String
+  details String?
+  category String?
+  client String?
+  size String?
+  role String?
 }
 
 model Notice {
