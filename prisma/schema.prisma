@@ -51,4 +51,12 @@ model MainCard {
   desc  String
   link  String
   icon  String
+}
+
+model InfoCard {
+  id      Int    @id @default(autoincrement())
+  title   String
+  desc    String
+  bgColor String
+  bgImage String?
 } 

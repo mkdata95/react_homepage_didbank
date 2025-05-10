@@ -188,6 +188,15 @@ interface PhotoCard {
   desc: string;
 }
 
+// InfoCard 타입 추가
+interface InfoCard {
+  id?: number;
+  title: string;
+  desc: string;
+  bgColor: string;
+  bgImage?: string;
+}
+
 export default function Home() {
   // 관리자 로그인 여부 확인
   const [isAdmin, setIsAdmin] = useState(false)
@@ -253,6 +262,13 @@ export default function Home() {
     { title: '채용안내', desc: '창의적이고 도전적인 인재를 기다리고 있습니다.', link: '/recruit', icon: '💙' },
   ]);
   const [cardDraft, setCardDraft] = useState(cards);
+  // 전화/오시는 길 카드 상태 추가
+  const [infoCards, setInfoCards] = useState<InfoCard[]>([
+    { title: '02.123.4567', desc: '평일 : 09:00 ~ 18:00\n토,일,공휴일 휴무', bgColor: '#2563eb', bgImage: '' },
+    { title: '오시는 길', desc: '다온테마는 항상 열려 있습니다.\n오시는 길을 안내해드립니다.', bgColor: '#232b36', bgImage: '' },
+  ]);
+  const [infoCardsDraft, setInfoCardsDraft] = useState(infoCards);
+  const [infoEditMode, setInfoEditMode] = useState(false);
 
   // 서버에서 동적으로 불러오기
   useEffect(() => {
@@ -326,6 +342,24 @@ export default function Home() {
         }
       })
   }, []);
+
+  // DB에서 infoCards 불러오기
+  useEffect(() => {
+    fetch('/api/info-cards')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length === 2) {
+          setInfoCards(data)
+          setInfoCardsDraft(data)
+        }
+      })
+  }, [])
+
+  // 디버깅: infoCards, infoCardsDraft 상태 확인
+  useEffect(() => {
+    console.log('infoCards:', infoCards)
+    console.log('infoCardsDraft:', infoCardsDraft)
+  }, [infoCards, infoCardsDraft])
 
   const handleHeroSave = async () => {
     setSaveMsg('저장 중...')
@@ -481,6 +515,17 @@ export default function Home() {
     }
   }
 
+  // infoCards 저장 함수
+  const handleInfoSave = async () => {
+    await fetch('/api/info-cards', {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(infoCardsDraft),
+    })
+    setInfoCards(infoCardsDraft)
+    setInfoEditMode(false)
+  }
+
   return (
     <main className="min-h-screen">
       {/* Hero Section */}
@@ -622,14 +667,93 @@ export default function Home() {
             </div>
             {/* 전화/오시는 길 */}
             <div className="flex-1 flex flex-col md:flex-row gap-4 min-w-[320px]">
-              <div className="flex-1 bg-blue-600 text-white rounded-xl flex flex-col items-center justify-center p-8 min-w-[160px]">
-                <div className="text-3xl font-bold mb-2">02.123.4567</div>
-                <div className="text-sm">평일 : 09:00 ~ 18:00<br />토,일,공휴일 휴무</div>
-              </div>
-              <div className="flex-1 bg-gray-800 text-white rounded-xl flex flex-col items-center justify-center p-8 min-w-[160px]">
-                <div className="text-2xl mb-2">오시는 길</div>
-                <div className="text-sm text-center">다온테마는 항상 열려 있습니다.<br />오시는 길을 안내해드립니다.</div>
-              </div>
+              {infoEditMode ? (
+                Array.isArray(infoCardsDraft) && infoCardsDraft.length > 0 ? infoCardsDraft.map((card, idx) => (
+                  <div key={idx} className="flex-1 flex flex-col items-center justify-center p-8 min-w-[160px] rounded-xl relative" style={{ background: card.bgColor, overflow: 'hidden' }}>
+                    {(card.bgImage !== undefined && card.bgImage !== '') && (
+                      <img src={card.bgImage} alt="배경" className="absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none" style={{zIndex:0}} />
+                    )}
+                    <input
+                      className="text-3xl font-bold mb-2 text-center bg-white/80 px-2 py-1 rounded relative z-10"
+                      value={card.title}
+                      onChange={e => setInfoCardsDraft(d => { const next = [...d]; next[idx].title = e.target.value; return next; })}
+                    />
+                    <textarea
+                      className="text-sm text-center bg-white/80 px-2 py-1 rounded relative z-10"
+                      value={card.desc}
+                      onChange={e => setInfoCardsDraft(d => { const next = [...d]; next[idx].desc = e.target.value; return next; })}
+                      rows={3}
+                    />
+                    <input
+                      className="w-32 mt-2 text-xs text-center bg-white/80 px-2 py-1 rounded relative z-10"
+                      value={card.bgColor}
+                      onChange={e => setInfoCardsDraft(d => { const next = [...d]; next[idx].bgColor = e.target.value; return next; })}
+                      placeholder="#2563eb"
+                    />
+                    <input
+                      type="file"
+                      accept="image/*"
+                      className="w-full mt-2 text-xs text-center bg-white/80 px-2 py-1 rounded relative z-10"
+                      onChange={async e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          const formData = new FormData();
+                          formData.append('file', file);
+                          const res = await fetch('/api/upload', {
+                            method: 'POST',
+                            body: formData,
+                          });
+                          const data = await res.json();
+                          if (data.fileUrl) {
+                            setInfoCardsDraft(d => {
+                              const next = [...d];
+                              next[idx].bgImage = data.fileUrl;
+                              return next;
+                            });
+                          }
+                        }
+                      }}
+                    />
+                    <input
+                      className="w-full mt-1 text-xs text-center bg-white/60 px-2 py-1 rounded relative z-10"
+                      value={card.bgImage || ''}
+                      readOnly
+                      placeholder="배경 이미지 URL"
+                    />
+                    {card.bgImage && card.bgImage !== '' && (
+                      <button
+                        type="button"
+                        className="mt-2 px-3 py-1 bg-red-500 text-white rounded relative z-10 hover:bg-red-600"
+                        onClick={() => setInfoCardsDraft(d => { const next = [...d]; next[idx].bgImage = ''; return next; })}
+                      >
+                        배경 이미지 삭제
+                      </button>
+                    )}
+                  </div>
+                )) : null
+              ) : (
+                infoCards.map((card, idx) => (
+                  <div key={idx} className="flex-1 rounded-xl flex flex-col items-center justify-center p-8 min-w-[160px] relative" style={{ background: card.bgColor, overflow: 'hidden' }}>
+                    {(card.bgImage !== undefined && card.bgImage !== '') && (
+                      <img src={card.bgImage} alt="배경" className="absolute inset-0 w-full h-full object-cover opacity-30 pointer-events-none" style={{zIndex:0}} />
+                    )}
+                    <div className="text-3xl font-bold mb-2 text-white relative z-10">{card.title}</div>
+                    <div className="text-sm text-white text-center whitespace-pre-line relative z-10">{card.desc}</div>
+                  </div>
+                ))
+              )}
+              {isAdmin && (
+                <div className="flex flex-col justify-center ml-2">
+                  {infoEditMode ? (
+                    <>
+                      <button onClick={handleInfoSave} className="bg-blue-600 text-white px-4 py-2 rounded mb-2">저장</button>
+                      <button onClick={() => { setInfoEditMode(false); setInfoCardsDraft(infoCards); }} className="bg-gray-400 text-white px-4 py-2 rounded">취소</button>
+                    </>
+                  ) : (
+                    <button onClick={() => setInfoEditMode(true)} className="bg-yellow-400 text-black px-4 py-2 rounded">수정</button>
+                  )}
+                </div>
+              )}
             </div>
           </div>
           {/* 하단 4개 카드 */}
