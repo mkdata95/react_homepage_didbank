@@ -8,6 +8,13 @@ export interface Product {
   description: string
   detail: string
   image?: string
+  images?: string[]
+  brand?: string
+  size?: string
+  summary?: string
+  features?: string
+  galleryTitle?: string
+  gallerySubtitle?: string
   category?: string
   tags?: string[]
 }

@@ -139,6 +139,13 @@ export default function ClientLayout({ children }: { children: ReactNode }) {
                           공지사항
                         </Link>
                         <Link
+                          href="/customer/quote"
+                          className="block px-4 py-2 text-gray-800 hover:bg-gray-100 hover:text-violet-600"
+                          onClick={() => setIsCustomerMenuOpen(false)}
+                        >
+                          견적요청
+                        </Link>
+                        <Link
                           href="/contact"
                           className="block px-4 py-2 text-gray-800 hover:bg-gray-100 hover:text-violet-600"
                           onClick={() => setIsCustomerMenuOpen(false)}

@@ -244,6 +244,15 @@ export default function Home() {
   const [portfolioSaveMsg, setPortfolioSaveMsg] = useState('')
   // 공지사항 상태 추가
   const [mainNotices, setMainNotices] = useState<{id:number, title:string, date:string}[]>([]);
+  // 하단 4개 카드 인라인 수정 상태
+  const [cardEditIdx, setCardEditIdx] = useState(-1);
+  const [cards, setCards] = useState([
+    { title: '온라인문의', desc: '궁금하신 내용을 남겨주시면 신속하고 답변드리겠습니다.', link: '/contact', icon: '📝' },
+    { title: 'FAQ', desc: '고객님들이 가장 궁금해 하시는 질문들이 여기에 있습니다.', link: '/faq', icon: '❓' },
+    { title: '갤러리', desc: '다온테마만의 다양한 소식을 이미지로 만나보세요.', link: '/gallery', icon: '📷' },
+    { title: '채용안내', desc: '창의적이고 도전적인 인재를 기다리고 있습니다.', link: '/recruit', icon: '💙' },
+  ]);
+  const [cardDraft, setCardDraft] = useState(cards);
 
   // 서버에서 동적으로 불러오기
   useEffect(() => {
@@ -264,9 +273,20 @@ export default function Home() {
   }, [])
 
   useEffect(() => {
-    const cookies = document.cookie.split(';').map(c => c.trim())
-    const found = cookies.find(c => c.startsWith('admin_auth='))
-    setIsAdmin(Boolean(found && found.split('=')[1] === '1'))
+    // 쿠키 체크 로직 개선
+    const checkAdmin = () => {
+      const cookies = document.cookie.split(';').map(c => c.trim())
+      const adminCookie = cookies.find(c => c.startsWith('admin_auth='))
+      const isAdminValue = adminCookie ? adminCookie.split('=')[1] === '1' : false
+      console.log('Admin Cookie:', adminCookie)
+      console.log('Is Admin:', isAdminValue)
+      setIsAdmin(isAdminValue)
+    }
+    
+    checkAdmin()
+    // 쿠키 변경 감지를 위한 이벤트 리스너 추가
+    window.addEventListener('storage', checkAdmin)
+    return () => window.removeEventListener('storage', checkAdmin)
   }, [])
 
   useEffect(() => {
@@ -293,6 +313,18 @@ export default function Home() {
       .then(data => {
         setMainNotices(data.slice(0, 5));
       });
+  }, []);
+
+  // DB에서 카드 정보 불러오기
+  useEffect(() => {
+    fetch('/api/main-cards')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data) && data.length > 0) {
+          setCards(data)
+          setCardDraft(data)
+        }
+      })
   }, []);
 
   const handleHeroSave = async () => {
@@ -560,11 +592,15 @@ export default function Home() {
       <section className="py-16 bg-gray-50">
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row gap-8 mb-10">
-            {/* 공지사항/질문 탭 */}
-            <div className="flex-1 bg-white rounded-xl shadow p-6 min-w-[320px]">
-              <div className="flex border-b mb-4">
-                <button className="flex-1 py-2 font-bold border-b-2 border-black">공지사항</button>
-                <button className="flex-1 py-2 text-gray-500">질문과 답변</button>
+            {/* 공지사항/문의하기 탭 */}
+            <div className="flex-1 bg-white rounded-xl shadow-lg border border-gray-200 p-6 min-w-[320px]">
+              <div className="flex border-b-2 border-gray-300 mb-4">
+                <button className="flex-1 py-2 font-bold border-b-2 border-black text-black focus:outline-none bg-white" tabIndex={0}>공지사항</button>
+                <button
+                  className="flex-1 py-2 font-bold text-gray-700 hover:text-blue-700 border-b-2 border-transparent focus:outline-none bg-white transition-colors"
+                  tabIndex={0}
+                  onClick={() => window.location.href = '/contact'}
+                >문의하기</button>
                 <button className="ml-auto text-2xl text-gray-400 hover:text-black">+</button>
               </div>
               <ul>
@@ -572,15 +608,15 @@ export default function Home() {
                   <li className="text-gray-400 py-4 text-center">공지사항이 없습니다.</li>
                 )}
                 {mainNotices.map(notice => (
-                  <li key={notice.id} className="flex justify-between items-center py-2 border-b">
-                    <Link href={`/customer/notice/${notice.id}`} className="truncate text-blue-700 hover:underline">
+                  <li key={notice.id} className="flex justify-between items-center py-3 border-b border-gray-100 hover:bg-blue-50 transition">
+                    <Link href={`/customer/notice/${notice.id}`} className="truncate text-blue-700 font-semibold hover:underline">
                       {notice.title}
                     </Link>
-                    <span className="text-xs text-gray-400">{notice.date?.slice(0, 10)}</span>
+                    <span className="text-xs text-gray-500 font-medium">{notice.date?.slice(0, 10)}</span>
                   </li>
                 ))}
                 <li className="text-right pt-2">
-                  <Link href="/customer/notice" className="text-xs text-blue-500 hover:underline">+ 전체보기</Link>
+                  <Link href="/customer/notice" className="text-xs text-blue-600 font-bold hover:underline">+ 전체보기</Link>
                 </li>
               </ul>
             </div>
@@ -598,34 +634,78 @@ export default function Home() {
           </div>
           {/* 하단 4개 카드 */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-            <div className="bg-white rounded-xl shadow p-6 flex flex-col justify-between min-h-[180px]">
-              <div>
-                <div className="font-bold mb-2">온라인문의</div>
-                <div className="text-gray-500 text-sm mb-4">궁금하신 내용을 남겨주시면 신속하고 답변드리겠습니다.</div>
+            {cards.map((card, idx) => (
+              <div
+                key={idx}
+                className={`bg-white rounded-xl shadow p-6 flex flex-col justify-between min-h-[180px] relative ${cardEditIdx === idx ? '' : 'cursor-pointer hover:shadow-xl hover:border-blue-400 border border-transparent transition'}`}
+                onClick={() => cardEditIdx === -1 && (window.location.href = card.link)}
+                tabIndex={0}
+                role="button"
+                aria-label={`${card.title} 바로가기`}
+              >
+                {/* 디버깅용 로그 */}
+                {(() => {
+                  console.log('Rendering card:', idx, 'isAdmin:', isAdmin, 'cardEditIdx:', cardEditIdx);
+                  return null;
+                })()}
+                {isAdmin && cardEditIdx !== idx && (
+                  <button
+                    className="absolute top-3 right-3 text-gray-400 hover:text-blue-600 z-50 bg-white rounded-full p-1 shadow-md"
+                    onClick={e => { e.stopPropagation(); setCardEditIdx(idx); setCardDraft(cards); }}
+                    aria-label="수정"
+                  >
+                    ✏️
+                  </button>
+                )}
+                {cardEditIdx === idx ? (
+                  <div className="flex flex-col gap-2">
+                    <input
+                      className="font-bold mb-2 border px-2 py-1 rounded"
+                      value={cardDraft[idx].title}
+                      onChange={e => setCardDraft(d => { const next = [...d]; next[idx].title = e.target.value; return next; })}
+                    />
+                    <textarea
+                      className="text-gray-500 text-sm mb-2 border px-2 py-1 rounded"
+                      value={cardDraft[idx].desc}
+                      onChange={e => setCardDraft(d => { const next = [...d]; next[idx].desc = e.target.value; return next; })}
+                    />
+                    <input
+                      className="text-xs text-blue-600 mb-2 border px-2 py-1 rounded"
+                      value={cardDraft[idx].link}
+                      onChange={e => setCardDraft(d => { const next = [...d]; next[idx].link = e.target.value; return next; })}
+                    />
+                    <div className="flex gap-2 mt-2">
+                      <button
+                        className="px-3 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                        onClick={async e => {
+                          e.stopPropagation();
+                          setCards(cardDraft);
+                          setCardEditIdx(-1);
+                          // DB에 저장
+                          await fetch('/api/main-cards', {
+                            method: 'PUT',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify(cardDraft),
+                          });
+                        }}
+                      >저장</button>
+                      <button
+                        className="px-3 py-1 bg-gray-200 text-gray-700 rounded hover:bg-gray-300"
+                        onClick={e => { e.stopPropagation(); setCardEditIdx(-1); setCardDraft(cards); }}
+                      >취소</button>
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <div className="font-bold mb-2">{card.title}</div>
+                      <div className="text-gray-500 text-sm mb-4">{card.desc}</div>
+                    </div>
+                    <div className="flex justify-end text-blue-400 text-3xl">{card.icon}</div>
+                  </>
+                )}
               </div>
-              <div className="flex justify-end text-blue-400 text-3xl">📝</div>
-            </div>
-            <div className="bg-white rounded-xl shadow p-6 flex flex-col justify-between min-h-[180px]">
-              <div>
-                <div className="font-bold mb-2">FAQ</div>
-                <div className="text-gray-500 text-sm mb-4">고객님들이 가장 궁금해 하시는 질문들이 여기에 있습니다.</div>
-              </div>
-              <div className="flex justify-end text-blue-400 text-3xl">❓</div>
-            </div>
-            <div className="bg-white rounded-xl shadow p-6 flex flex-col justify-between min-h-[180px]">
-              <div>
-                <div className="font-bold mb-2">갤러리</div>
-                <div className="text-gray-500 text-sm mb-4">다온테마만의 다양한 소식을 이미지로 만나보세요.</div>
-              </div>
-              <div className="flex justify-end text-blue-400 text-3xl">📷</div>
-            </div>
-            <div className="bg-white rounded-xl shadow p-6 flex flex-col justify-between min-h-[180px]">
-              <div>
-                <div className="font-bold mb-2">채용안내</div>
-                <div className="text-gray-500 text-sm mb-4">창의적이고 도전적인 인재를 기다리고 있습니다.</div>
-              </div>
-              <div className="flex justify-end text-blue-400 text-3xl">💙</div>
-            </div>
+            ))}
           </div>
         </div>
       </section>

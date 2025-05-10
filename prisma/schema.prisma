@@ -43,4 +43,12 @@ model Notice {
   author    String
   date      DateTime @default(now())
   views     Int      @default(0)
+}
+
+model MainCard {
+  id    Int    @id @default(autoincrement())
+  title String
+  desc  String
+  link  String
+  icon  String
 } 

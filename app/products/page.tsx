@@ -3,7 +3,7 @@
 import { useProducts, Product } from '../context/ProductContext'
 import Link from 'next/link'
 import { useState, useEffect, useMemo } from 'react'
-import { FiTrash2, FiPlus, FiTag } from 'react-icons/fi'
+import { FiTrash2, FiPlus, FiTag, FiX } from 'react-icons/fi'
 import Image from 'next/image'
 
 // UUID 생성 함수
@@ -30,12 +30,25 @@ export default function ProductsPage() {
     detail: '',
     image: '/images/products/MSI.png',
   })
+  const [search, setSearch] = useState('')
+  const [tagInput, setTagInput] = useState('')
 
-  // 선택된 카테고리에 따라 필터링된 제품 목록
+  // 선택된 카테고리와 검색어에 따라 필터링된 제품 목록
   const filteredProducts = useMemo(() => {
-    if (selectedCategory === 'all') return products;
-    return products.filter(product => product.category === selectedCategory);
-  }, [products, selectedCategory]);
+    let list = products
+    if (selectedCategory !== 'all') {
+      list = list.filter(product => product.category === selectedCategory)
+    }
+    if (search.trim()) {
+      const q = search.trim().toLowerCase()
+      list = list.filter(product =>
+        (product.title && product.title.toLowerCase().includes(q)) ||
+        (product.description && product.description.toLowerCase().includes(q)) ||
+        (product.tags && product.tags.some(tag => tag.toLowerCase().includes(q)))
+      )
+    }
+    return list
+  }, [products, selectedCategory, search])
 
   useEffect(() => {
     const cookies = document.cookie.split(';').map(c => c.trim())
@@ -135,72 +148,68 @@ export default function ProductsPage() {
   }
 
   return (
-    <main className="pt-20">
+    <main className="bg-white min-h-screen">
       {/* Hero Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 rounded-xl py-16 flex flex-col justify-center" style={{ background: '#393E46' }}>
-          <h1 className="text-4xl font-bold mb-4 pl-4 md:pl-16" style={{ color: '#DFD0B8' }}>제품</h1>
-          <p className="text-xl pl-4 md:pl-16" style={{ color: '#DFD0B8' }}>최고의 품질과 혁신적인 기술로 만든 제품을 소개합니다</p>
+      <div className="relative w-full h-64 md:h-80 flex items-center justify-center" style={{ backgroundColor: '#181617', backgroundImage: 'url(/images/hero-default.jpg)', backgroundSize: 'cover', backgroundPosition: 'center', marginTop: '48px' }}>
+        <div className="absolute inset-0 bg-black opacity-60"></div>
+        <div className="relative z-10 text-center w-full pt-12">
+          <h1 className="text-4xl md:text-5xl font-bold text-white mb-2">제품소개</h1>
+          <p className="text-lg text-gray-200">보다 발전된 기술로 보다 참신한 제품을 생산합니다.</p>
         </div>
-      </section>
-
-      {/* Products List */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto mb-8 flex justify-between items-center">
-            {/* 카테고리 필터 */}
-            <div className="flex flex-wrap gap-2">
-              <button
-                onClick={() => setSelectedCategory('all')}
-                className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                  selectedCategory === 'all' 
-                    ? 'bg-[#222831] text-[#DFD0B8]' 
-                    : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                }`}
-              >
-                전체보기
-              </button>
+      </div>
+      {/* 경로 네비게이션 */}
+      <div className="bg-white border-b">
+        <div className="max-w-6xl mx-auto px-4 flex items-center text-gray-400 text-sm gap-2 py-4">
+          <span>홈</span>
+          <span className="mx-1">&gt;</span>
+          <span>제품소개</span>
+          <span className="mx-1">&gt;</span>
+          <span className="text-[#B85C38] font-bold">갤러리형</span>
+        </div>
+      </div>
+      {/* 제품 카드 그리드 */}
+      <section className="py-16 bg-white">
+        <div className="max-w-6xl mx-auto px-4">
+          {/* 카테고리 탭 + 검색 */}
+          <div className="flex flex-col md:flex-row md:items-center gap-4 justify-between mb-6">
+            <div className="flex gap-2 justify-center">
+              <button className={`px-5 py-2 rounded-full font-semibold transition-colors border ${selectedCategory === 'all' ? 'bg-[#222831] text-[#DFD0B8] border-[#222831]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'}`} onClick={() => setSelectedCategory('all')}>전체</button>
               {categories.map(category => (
-                <button
-                  key={category}
-                  onClick={() => setSelectedCategory(category)}
-                  className={`px-4 py-2 rounded-lg font-medium transition-colors ${
-                    selectedCategory === category 
-                      ? 'bg-[#222831] text-[#DFD0B8]' 
-                      : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-                  }`}
-                >
-                  {category}
-                </button>
+                <button key={category} className={`px-5 py-2 rounded-full font-semibold transition-colors border ${selectedCategory === category ? 'bg-[#222831] text-[#DFD0B8] border-[#222831]' : 'bg-white text-gray-700 border-gray-200 hover:bg-gray-100'}`} onClick={() => setSelectedCategory(category)}>{category}</button>
               ))}
             </div>
-            
-            {/* 관리자 버튼 */}
-            <div className="flex gap-2">
-              {isLoggedIn && !isAdding && (
-                <>
-                  <button
-                    onClick={() => {
-                      setNewProduct(prev => ({
-                        ...prev,
-                        category: selectedCategory !== 'all' ? selectedCategory : ''
-                      }));
-                      setIsAdding(true);
-                    }}
-                    className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#222831] text-[#DFD0B8] font-semibold hover:bg-[#948979] hover:text-[#222831] transition-colors shadow"
-                  >
-                    <FiPlus /> 제품 추가
-                  </button>
-                  <button
-                    onClick={() => setIsCategoryModalOpen(true)}
-                    className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#DFD0B8] text-[#222831] font-semibold hover:bg-[#222831] hover:text-[#DFD0B8] transition-colors shadow"
-                  >
-                    <FiTag /> 카테고리 관리
-                  </button>
-                </>
-              )}
-            </div>
+            <input
+              type="text"
+              value={search}
+              onChange={e => setSearch(e.target.value)}
+              placeholder="검색어를 입력하세요 (제품명, 설명, 태그)"
+              className="border rounded-lg px-4 py-2 w-full md:w-72 shadow-sm"
+            />
           </div>
+          {/* 관리자용 버튼 */}
+          {isLoggedIn && !isAdding && (
+            <div className="flex gap-2 justify-end mb-8">
+              <button
+                onClick={() => {
+                  setNewProduct(prev => ({
+                    ...prev,
+                    category: selectedCategory !== 'all' ? selectedCategory : ''
+                  }));
+                  setIsAdding(true);
+                }}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#222831] text-[#DFD0B8] font-semibold hover:bg-[#948979] hover:text-[#222831] transition-colors shadow"
+              >
+                <FiPlus /> 제품 추가
+              </button>
+              <button
+                onClick={() => setIsCategoryModalOpen(true)}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#DFD0B8] text-[#222831] font-semibold hover:bg-[#222831] hover:text-[#DFD0B8] transition-colors shadow"
+              >
+                <FiTag /> 카테고리 관리
+              </button>
+            </div>
+          )}
+          {/* 제품 추가 폼 */}
           {isAdding && (
             <div className="bg-white rounded-xl shadow-lg overflow-hidden mb-8 p-6 flex flex-col md:flex-row gap-6 items-center">
               <div className="w-full md:w-1/4 flex flex-col items-center">
@@ -262,13 +271,36 @@ export default function ProductsPage() {
                   className="border rounded-lg p-2 mb-2 h-24"
                 />
                 <p className="text-sm text-gray-500 mb-2">상세 설명은 하단 상세 설명 영역에 본문으로 출력됩니다.</p>
-                <input
-                  type="text"
-                  value={newProduct.tags ? newProduct.tags.join(', ') : ''}
-                  onChange={e => setNewProduct(prev => ({ ...prev, tags: e.target.value.split(',').map(tag => tag.trim()).filter(Boolean) }))}
-                  placeholder="태그를 쉼표(,)로 구분하여 입력"
-                  className="border rounded-lg p-2 mb-2"
-                />
+                {/* 태그 입력: 엔터로 추가, 뱃지 UI */}
+                <div>
+                  <div className="flex flex-wrap gap-2 mb-2">
+                    {newProduct.tags && newProduct.tags.map((tag, i) => (
+                      <span key={i} className="flex items-center bg-gray-100 rounded-full px-3 py-1 text-sm text-gray-700">
+                        {tag}
+                        <button type="button" className="ml-1 text-gray-400 hover:text-red-500" onClick={() => setNewProduct(prev => ({ ...prev, tags: prev.tags?.filter((_, idx) => idx !== i) }))}><FiX size={14} /></button>
+                      </span>
+                    ))}
+                  </div>
+                  <input
+                    type="text"
+                    value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' && tagInput.trim()) {
+                        e.preventDefault();
+                        if (!newProduct.tags?.includes(tagInput.trim())) {
+                          setNewProduct(prev => ({
+                            ...prev,
+                            tags: [...(prev.tags || []), tagInput.trim()]
+                          }))
+                        }
+                        setTagInput('')
+                      }
+                    }}
+                    placeholder="엔터로 태그 추가"
+                    className="border rounded-lg p-2 mb-2"
+                  />
+                </div>
                 <div className="flex gap-2 mt-2">
                   <button
                     onClick={handleAddProduct}
@@ -286,47 +318,43 @@ export default function ProductsPage() {
               </div>
             </div>
           )}
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {filteredProducts.length === 0 ? (
-                <div className="col-span-3 py-16 text-center">
-                  <div className="bg-gray-50 rounded-xl p-8 shadow-sm">
-                    <h3 className="text-xl font-bold text-gray-700 mb-2">해당 카테고리에 제품이 없습니다</h3>
-                    <p className="text-gray-500 mb-4">다른 카테고리를 선택하거나 제품을 추가해보세요.</p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-16">
+            {filteredProducts.length === 0 ? (
+              <div className="col-span-3 py-16 text-center">
+                <div className="bg-gray-50 rounded-xl p-8 shadow-sm">
+                  <h3 className="text-xl font-bold text-gray-700 mb-2">해당 카테고리에 제품이 없습니다</h3>
+                  <p className="text-gray-500 mb-4">다른 카테고리를 선택하거나 제품을 추가해보세요.</p>
+                  {isLoggedIn && (
+                    <button onClick={() => { setIsAdding(true); setNewProduct(prev => ({ ...prev, category: selectedCategory })); }} className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[#222831] text-[#DFD0B8] font-semibold hover:bg-[#948979] hover:text-[#222831] transition-colors">
+                      <FiPlus /> 이 카테고리에 제품 추가
+                    </button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              filteredProducts.map((product, index) => (
+                <div 
+                  key={product.id} 
+                  className="bg-white shadow hover:shadow-lg transition overflow-hidden flex flex-col"
+                  style={{ width: 390, height: 390, minWidth: 390, minHeight: 390, maxWidth: 390, maxHeight: 390, borderRadius: 0 }}
+                >
+                  <div 
+                    className="bg-gray-100 overflow-hidden"
+                    style={{ width: 390, height: 290 }}
+                  >
+                    {product.image && (
+                      <img
+                        src={product.image}
+                        alt={product.title}
+                        className="object-cover"
+                        style={{ width: 390, height: 290, display: 'block' }}
+                      />
+                    )}
+                    {/* 삭제 버튼: 관리자만 노출 */}
                     {isLoggedIn && (
                       <button
-                        onClick={() => {
-                          setIsAdding(true);
-                          setNewProduct(prev => ({ ...prev, category: selectedCategory }));
-                        }}
-                        className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[#222831] text-[#DFD0B8] font-semibold hover:bg-[#948979] hover:text-[#222831] transition-colors"
-                      >
-                        <FiPlus /> 이 카테고리에 제품 추가
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ) : (
-                filteredProducts.map((product, index) => (
-                  <div
-                    key={product.id}
-                    className="bg-white rounded-2xl shadow-lg overflow-hidden relative flex flex-col group transition hover:shadow-2xl"
-                    style={{ minHeight: 380 }}
-                  >
-                    {/* 이미지 영역 */}
-                    <div className="relative h-48 w-full overflow-hidden">
-                      {product.image && (
-                        <Image
-                          src={product.image}
-                          alt={product.title}
-                          fill
-                          priority={index === 0}
-                          sizes="(max-width: 768px) 100vw, 33vw"
-                          className="object-cover w-full h-full"
-                        />
-                      )}
-                      <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation();
                           if (window.confirm('정말 삭제하시겠습니까?')) deleteProduct(product.id)
                         }}
                         className="absolute top-3 right-3 bg-white/80 hover:bg-red-100 text-red-500 rounded-full p-2 shadow transition-opacity opacity-100 hover:scale-110"
@@ -334,101 +362,24 @@ export default function ProductsPage() {
                       >
                         <FiTrash2 size={20} />
                       </button>
-                    </div>
-                    {/* 내용 영역 */}
-                    <div className="flex-1 flex flex-col p-6 gap-2">
-                      <h3 className="text-lg font-bold mb-1 text-[#222831]">{product.title}</h3>
-                      <p className="text-gray-500 mb-2 text-sm">{product.description}</p>
-                      
-                      {/* 카테고리 표시 */}
+                    )}
+                  </div>
+                  <div className="p-5 flex flex-col flex-1" style={{height: 100, minHeight: 100, maxHeight: 100}}>
+                    <h3 className="text-lg font-bold mb-2">{product.title}</h3>
+                    <p className="text-gray-600 text-sm mb-2 flex-1 overflow-hidden">{product.description || '제품소개 준비중입니다.'}</p>
+                    <div className="flex items-center justify-between text-xs text-gray-400">
                       {product.category && (
-                        <div className="mb-2">
-                          <span className="inline-block px-3 py-1 bg-[#F4EFE6] rounded-lg text-xs text-[#222831] font-medium">
-                            {product.category}
-                          </span>
-                        </div>
+                        <span>{product.category}</span>
                       )}
-                      
-                      {/* 태그만 태그 스타일로 출력 */}
-                      <div className="flex flex-wrap gap-2 mb-4">
-                        {product.tags && product.tags.map((tag, i) => (
-                          <span key={i} className="px-2 py-1 bg-gray-100 rounded-lg text-xs text-gray-600 border">{tag}</span>
-                        ))}
-                      </div>
-                      <div className="flex-1 flex items-end justify-center">
-                        <Link
-                          href={`/products/${product.id}`}
-                          className="block w-full text-center font-bold py-2 rounded-lg text-[#222831] hover:bg-gray-100 transition"
-                        >
-                          상세 보기
-                        </Link>
-                      </div>
+                      <Link href={`/products/${product.id}`} className="text-blue-500 hover:underline">상세 보기</Link>
                     </div>
                   </div>
-                ))
-              )}
-            </div>
+                </div>
+              ))
+            )}
           </div>
         </div>
       </section>
-
-      {/* Contact Section */}
-      <section className="py-20 bg-gray-50">
-        <div className="container mx-auto px-4">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-3xl font-bold mb-8">제품 문의</h2>
-            <p className="text-gray-600 mb-8">
-              제품에 대한 자세한 정보나 견적 문의가 필요하시다면 언제든지 연락주세요.
-            </p>
-            <a
-              href="/contact"
-              className="inline-block bg-[#222831] text-[#DFD0B8] px-8 py-3 rounded-lg font-semibold hover:bg-[#948979] hover:text-[#222831] transition-colors"
-            >
-              문의하기
-            </a>
-          </div>
-        </div>
-      </section>
-
-      {/* 카테고리 관리 모달 */}
-      {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-          <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md relative">
-            <button onClick={() => setIsCategoryModalOpen(false)} className="absolute top-3 right-3 text-gray-400 hover:text-gray-600 text-2xl">&times;</button>
-            <h2 className="text-xl font-bold mb-6 text-center">카테고리 관리</h2>
-            <div className="flex gap-2 mb-4">
-              <input
-                type="text"
-                placeholder="새 카테고리 입력"
-                value={newCategory}
-                onChange={e => setNewCategory(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleAddCategory(); } }}
-                className="border rounded-lg px-3 py-2 flex-1"
-              />
-              <button
-                onClick={handleAddCategory}
-                className="bg-[#222831] text-[#DFD0B8] font-bold px-4 py-2 rounded-lg hover:bg-[#948979] hover:text-[#222831] transition-colors"
-              >
-                추가
-              </button>
-            </div>
-            <ul className="space-y-2">
-              {categories.length === 0 && <li className="text-gray-400 text-center">카테고리가 없습니다.</li>}
-              {categories.map(cat => (
-                <li key={cat} className="flex items-center justify-between bg-[#F4EFE6] rounded-lg px-4 py-2">
-                  <span className="font-medium text-[#393E46]">{cat}</span>
-                  <button
-                    onClick={() => handleDeleteCategory(cat)}
-                    className="text-red-500 hover:text-red-700"
-                  >
-                    <FiTrash2 />
-                  </button>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-      )}
     </main>
   )
 } 

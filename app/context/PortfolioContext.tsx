@@ -7,10 +7,12 @@ export interface PortfolioItem {
   period: string
   role: string
   overview: string
-  details: string[]
+  details: string[] | string
   client: string
   image: string
   category: string
+  gallery?: any[]
+  size?: string
 }
 
 interface PortfolioContextType {
@@ -35,6 +37,7 @@ const initialItems: PortfolioItem[] = [
     client: '국립과학관',
     image: '/images/projects/science-museum.jpg',
     category: '솔루션',
+    size: 'Desktop 1200 - Mobile 360',
   },
 ]
 

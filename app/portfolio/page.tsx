@@ -56,10 +56,12 @@ export interface PortfolioItem {
   period: string
   role: string
   overview: string
-  details: string[]
+  details: string[] | string
   client: string
   image: string
   category: string
+  gallery?: any[]
+  size?: string
 }
 
 export default function PortfolioPage() {
@@ -78,6 +80,7 @@ export default function PortfolioPage() {
     client: '',
     image: '/images/projects/science-museum.jpg',
     category: '',
+    size: 'Desktop 1200 - Mobile 360',
   })
   const [page, setPage] = useState(1)
   const [selectedCategory, setSelectedCategory] = useState('전체')
@@ -185,7 +188,7 @@ export default function PortfolioPage() {
     })
     const { id } = await res.json()
     setItems(prev => [...prev, { ...newItem, id }])
-    setNewItem({ id: '', title: '', period: '', role: '', overview: '', details: [''], client: '', image: '/images/projects/science-museum.jpg', category: '' })
+    setNewItem({ id: '', title: '', period: '', role: '', overview: '', details: [''], client: '', image: '/images/projects/science-museum.jpg', category: '', size: 'Desktop 1200 - Mobile 360' })
     setIsAdding(false)
   }
 
@@ -203,246 +206,222 @@ export default function PortfolioPage() {
   return (
     <main className="pt-20">
       {/* Hero Section */}
-      <section className="py-20">
-        <div className="container mx-auto px-4 rounded-xl py-16 flex flex-col justify-center" style={{ background: '#393E46' }}>
-          <h1 className="text-4xl font-bold mb-4 pl-4 md:pl-16" style={{ color: '#DFD0B8' }}>주요실적</h1>
-          <p className="text-xl pl-4 md:pl-16" style={{ color: '#DFD0B8' }}>페델타의 주요 프로젝트와 성과를 소개합니다</p>
-        </div>
+      <section
+        className="relative h-64 w-full flex items-center justify-center mb-8"
+        style={{ background: '#111', minHeight: '16rem', width: '100%', zIndex: 1 }}
+      >
+        <h1 className="text-4xl font-bold text-white">주요 실적</h1>
       </section>
 
-      {/* Portfolio Categories & Add Button */}
-      <section className="py-20">
-        <div className="container mx-auto px-4">
-          <div className="max-w-6xl mx-auto flex justify-between items-center mb-8">
-            <div className="flex gap-2">
-              {availableCategories.map((cat) => (
-                <button
-                  key={cat}
-                  onClick={() => { setSelectedCategory(cat); setPage(1); }}
-                  className={
-                    `px-7 py-2 rounded-full font-bold text-base transition-all duration-200 shadow-sm border-2 ` +
-                    (selectedCategory === cat ? 'bg-[#222831] text-[#DFD0B8] border-[#948979] shadow-lg scale-105' :
-                      'bg-[#DFD0B8] text-[#393E46] border-transparent hover:bg-[#948979] hover:text-[#222831] hover:border-[#393E46]')
-                  }
-                >
-                  {cat}
-                </button>
-              ))}
+      {/* 네비게이션 */}
+      <nav className="w-full flex justify-start mb-4" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <ol className="flex items-center space-x-2 text-gray-500 text-sm">
+          <li><Link href="/">홈</Link></li>
+          <li>&gt;</li>
+          <li>주요 실적</li>
+        </ol>
+      </nav>
+
+      {/* 카테고리 버튼 */}
+      <div className="w-full flex justify-center mb-8 mt-12" style={{ maxWidth: '1200px', margin: '3rem auto 2rem auto' }}>
+        <div className="flex gap-2 flex-wrap justify-center">
+          {availableCategories.map((cat) => (
+            <button
+              key={cat}
+              onClick={() => { setSelectedCategory(cat); setPage(1); }}
+              className={
+                `px-7 py-2 rounded-full font-bold text-base transition-all duration-200 shadow-sm border-2 ` +
+                (selectedCategory === cat ? 'bg-[#222831] text-[#DFD0B8] border-[#948979] shadow-lg scale-105' :
+                  'bg-[#DFD0B8] text-[#393E46] border-transparent hover:bg-[#948979] hover:text-[#222831] hover:border-[#393E46]')
+              }
+            >
+              {cat}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* 실적 추가/카테고리 관리 + 카테고리 버튼 */}
+      <div className="container mx-auto px-4 mb-8 flex flex-col md:flex-row md:items-center md:justify-center gap-4">
+        <div className="flex gap-2 justify-center">
+          {isLoggedIn && !isAdding && (
+            <>
+              <button
+                onClick={() => {
+                  setNewItem(prev => ({
+                    ...prev,
+                    category: selectedCategory !== '전체' ? selectedCategory : ''
+                  }));
+                  setIsAdding(true);
+                }}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#222831] text-[#DFD0B8] font-semibold hover:bg-[#948979] hover:text-[#222831] transition-colors shadow"
+              >
+                <FiPlus /> 실적 추가
+              </button>
+              <button
+                onClick={() => setIsCategoryModalOpen(true)}
+                className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#DFD0B8] text-[#222831] font-semibold hover:bg-[#222831] hover:text-[#DFD0B8] transition-colors shadow"
+              >
+                <FiTag /> 카테고리 관리
+              </button>
+            </>
+          )}
+        </div>
+      </div>
+
+      {/* 실적 추가 폼 (isAdding) */}
+      {isAdding && (
+        <div className="container mx-auto px-4 mb-8">
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden p-6 flex flex-col md:flex-row gap-6 items-center">
+            <div className="w-full md:w-1/4 flex flex-col items-center">
+              <label className="w-full flex flex-col items-center cursor-pointer">
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="hidden"
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0]
+                    if (file) {
+                      const optimizedImage = await resizeAndOptimizeImage(file);
+                      setNewItem(prev => ({ ...prev, image: optimizedImage }))
+                    }
+                  }}
+                />
+                <img
+                  src={newItem.image || '/images/projects/science-museum.jpg'}
+                  alt="실적 이미지"
+                  width={128}
+                  height={128}
+                  className="object-cover rounded-xl border mb-2"
+                  style={{ width: 128, height: 128 }}
+                />
+                <span className="text-xs text-gray-500">이미지 변경</span>
+              </label>
             </div>
-            
-            <div className="flex gap-2">
-              {isLoggedIn && !isAdding && (
-                <>
-                  <button
-                    onClick={() => {
-                      setNewItem(prev => ({
-                        ...prev,
-                        category: selectedCategory !== '전체' ? selectedCategory : ''
-                      }));
-                      setIsAdding(true);
-                    }}
-                    className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#222831] text-[#DFD0B8] font-semibold hover:bg-[#948979] hover:text-[#222831] transition-colors shadow"
-                  >
-                    <FiPlus /> 실적 추가
-                  </button>
-                  <button
-                    onClick={() => setIsCategoryModalOpen(true)}
-                    className="flex items-center gap-2 px-5 py-2 rounded-lg bg-[#DFD0B8] text-[#222831] font-semibold hover:bg-[#222831] hover:text-[#DFD0B8] transition-colors shadow"
-                  >
-                    <FiTag /> 카테고리 관리
-                  </button>
-                </>
-              )}
+            <div className="w-full md:w-3/4 flex flex-col gap-2">
+              <input
+                type="text"
+                value={newItem.title}
+                onChange={e => setNewItem(prev => ({ ...prev, title: e.target.value }))}
+                placeholder="프로젝트명"
+                className="text-xl font-bold border rounded-lg p-2 mb-2"
+              />
+              <textarea
+                value={newItem.overview}
+                onChange={e => setNewItem(prev => ({ ...prev, overview: e.target.value }))}
+                placeholder="설명"
+                className="border rounded-lg p-2 mb-2 h-16"
+              />
+              <textarea
+                value={Array.isArray(newItem.details) ? newItem.details.join('\n') : newItem.details}
+                onChange={e => setNewItem(prev => ({ ...prev, details: e.target.value.split('\n') }))}
+                placeholder="상세 정보 (줄바꿈으로 구분)"
+                className="border rounded-lg p-2 mb-2 h-24"
+              />
+              <div className="flex gap-2 mt-2">
+                <button
+                  onClick={handleAdd}
+                  className="px-6 py-2 rounded-lg bg-[#222831] text-[#DFD0B8] font-semibold hover:bg-[#948979] hover:text-[#222831] transition-colors"
+                >
+                  저장
+                </button>
+                <button
+                  onClick={() => setIsAdding(false)}
+                  className="px-6 py-2 rounded-lg border border-[#222831] text-[#222831] font-semibold hover:bg-gray-100 transition-colors"
+                >
+                  취소
+                </button>
+              </div>
             </div>
           </div>
-          {isAdding && (
-            <div className="bg-white rounded-2xl shadow-lg overflow-hidden mb-8 p-6 flex flex-col md:flex-row gap-6 items-center">
-              <div className="w-full md:w-1/4 flex flex-col items-center">
-                <label className="w-full flex flex-col items-center cursor-pointer">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    onChange={async (e) => {
-                      const file = e.target.files?.[0]
-                      if (file) {
-                        // 최적화된 이미지로 변환
-                        const optimizedImage = await resizeAndOptimizeImage(file);
-                        setNewItem(prev => ({ ...prev, image: optimizedImage }))
-                      }
-                    }}
-                  />
-                  <Image
-                    src={newItem.image || '/images/projects/science-museum.jpg'}
-                    alt="실적 이미지"
-                    width={128}
-                    height={128}
-                    priority
-                    className="object-cover rounded-xl border mb-2"
-                  />
-                  <span className="text-xs text-gray-500">이미지 변경</span>
-                </label>
-              </div>
-              <div className="w-full md:w-3/4 flex flex-col gap-2">
-                <input
-                  type="text"
-                  value={newItem.title}
-                  onChange={e => setNewItem(prev => ({ ...prev, title: e.target.value }))}
-                  placeholder="프로젝트명"
-                  className="text-xl font-bold border rounded-lg p-2 mb-2"
-                />
-                <input
-                  type="text"
-                  value={newItem.period}
-                  onChange={e => setNewItem(prev => ({ ...prev, period: e.target.value }))}
-                  placeholder="기간"
-                  className="border rounded-lg p-2 mb-2"
-                />
-                <input
-                  type="text"
-                  value={newItem.role}
-                  onChange={e => setNewItem(prev => ({ ...prev, role: e.target.value }))}
-                  placeholder="담당 역할"
-                  className="border rounded-lg p-2 mb-2"
-                />
-                <input
-                  type="text"
-                  value={newItem.client}
-                  onChange={e => setNewItem(prev => ({ ...prev, client: e.target.value }))}
-                  placeholder="클라이언트"
-                  className="border rounded-lg p-2 mb-2"
-                />
-                <select
-                  value={newItem.category || ''}
-                  onChange={e => setNewItem(prev => ({ ...prev, category: e.target.value }))}
-                  className="border rounded-lg p-2 mb-2"
-                >
-                  <option value="">카테고리 선택</option>
-                  {categories.map(cat => (
-                    <option key={cat} value={cat}>{cat}</option>
-                  ))}
-                </select>
-                <textarea
-                  value={newItem.overview}
-                  onChange={e => setNewItem(prev => ({ ...prev, overview: e.target.value }))}
-                  placeholder="간단 설명"
-                  className="border rounded-lg p-2 mb-2 h-16"
-                />
-                <textarea
-                  value={newItem.details.join('\n')}
-                  onChange={e => setNewItem(prev => ({ ...prev, details: e.target.value.split('\n') }))}
-                  placeholder="주요 작업 (줄바꿈으로 구분)"
-                  className="border rounded-lg p-2 mb-2 h-24"
-                />
-                <div className="flex gap-2 mt-2">
-                  <button
-                    onClick={handleAdd}
-                    className="px-6 py-2 rounded-lg bg-[#222831] text-[#DFD0B8] font-semibold hover:bg-[#948979] hover:text-[#222831] transition-colors"
-                  >
-                    저장
-                  </button>
-                  <button
-                    onClick={() => setIsAdding(false)}
-                    className="px-6 py-2 rounded-lg border border-[#222831] text-[#222831] font-semibold hover:bg-gray-100 transition-colors"
-                  >
-                    취소
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
+        </div>
+      )}
 
-          <div className="max-w-6xl mx-auto">
-            {paginated.length === 0 ? (
-              <div className="py-16 text-center">
-                <div className="bg-gray-50 rounded-xl p-8 shadow-sm">
-                  <h3 className="text-xl font-bold text-gray-700 mb-2">해당 카테고리에 실적이 없습니다</h3>
-                  <p className="text-gray-500 mb-4">다른 카테고리를 선택하거나 실적을 추가해보세요.</p>
+      {/* 카드형 리스트 (갤러리 스타일) */}
+      <section className="w-full flex flex-col items-center" style={{ maxWidth: '1200px', margin: '0 auto' }}>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-10 w-full">
+          {paginated.map((item) => (
+            <Link 
+              href={`/portfolio/${item.id}`} 
+              key={item.id}
+              className="bg-white shadow hover:shadow-lg transition overflow-hidden flex flex-col cursor-pointer"
+              style={{ width: 590, height: 590, minWidth: 590, minHeight: 590, maxWidth: 590, maxHeight: 590, borderRadius: 0 }}
+            >
+              {/* 이미지 */}
+              <div className="bg-gray-100 overflow-hidden" style={{ width: 590, height: 443 }}>
+                <img
+                  src={item.image}
+                  alt={item.title}
+                  className="object-cover"
+                  style={{ width: 590, height: 443, display: 'block' }}
+                />
+              </div>
+              {/* 정보 */}
+              <div className="p-6 flex flex-col flex-1" style={{height: 147, minHeight: 147, maxHeight: 147}}>
+                <h3 className="text-xl font-bold mb-3">{item.title}</h3>
+                <p className="text-gray-600 text-sm mb-3 flex-1">{item.overview}</p>
+                <div className="flex items-center justify-between text-xs text-gray-400">
+                  <span>날짜: {item.period}</span>
                   {isLoggedIn && (
-                    <button
-                      onClick={() => {
-                        setIsAdding(true);
-                        setNewItem(prev => ({ ...prev, category: selectedCategory !== '전체' ? selectedCategory : '' }));
+                    <button 
+                      onClick={(e) => {
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleDelete(item.id);
                       }}
-                      className="inline-flex items-center gap-2 px-5 py-2 rounded-lg bg-[#222831] text-[#DFD0B8] font-semibold hover:bg-[#948979] hover:text-[#222831] transition-colors"
+                      className="text-red-500 hover:text-red-700"
                     >
-                      <FiPlus /> 이 카테고리에 실적 추가
+                      <FiTrash2 />
                     </button>
                   )}
                 </div>
               </div>
-            ) : (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-                {paginated.map((item, index) => (
-                  <div key={item.id} className="bg-white rounded-2xl shadow-lg overflow-hidden flex flex-col transition hover:shadow-2xl">
-                    {/* 이미지 */}
-                    <div className="relative h-48 w-full">
-                      <Image
-                        src={item.image || '/images/projects/science-museum.jpg'}
-                        alt={item.title}
-                        fill
-                        priority={index === 0}
-                        sizes="(max-width: 768px) 100vw, 33vw"
-                        className="object-cover w-full h-full"
-                      />
-                      {isLoggedIn && (
-                        <button
-                          onClick={() => handleDelete(item.id)}
-                          className="absolute top-3 right-3 bg-white/80 hover:bg-red-100 text-red-500 rounded-full p-2 shadow transition-opacity opacity-100 hover:scale-110"
-                        >
-                          <FiTrash2 />
-                        </button>
-                      )}
-                    </div>
-                    {/* 내용 */}
-                    <div className="flex-1 flex flex-col p-6 gap-2">
-                      <h3 className="text-lg font-bold mb-1 text-[#222831]">{item.title}</h3>
-                      {item.category && (
-                        <div className="mb-2">
-                          <span className="inline-block px-3 py-1 bg-[#F4EFE6] rounded-lg text-xs text-[#222831] font-medium">
-                            {item.category}
-                          </span>
-                        </div>
-                      )}
-                      <p className="text-gray-500 text-sm mb-4">{item.overview}</p>
-                      <div className="mt-auto">
-                        <Link
-                          href={`/portfolio/${item.id}`}
-                          className="block w-full text-center font-bold py-2 rounded-lg text-[#222831] hover:bg-gray-100 transition"
-                        >
-                          상세 보기
-                        </Link>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
+            </Link>
+          ))}
+        </div>
+      </section>
 
-            {/* 페이지네이션 */}
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-12">
-                <div className="flex gap-1">
-                  {[...Array(totalPages)].map((_, i) => (
-                    <button
-                      key={i}
-                      onClick={() => setPage(i + 1)}
-                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                        page === i + 1
-                          ? 'bg-[#222831] text-[#DFD0B8] font-bold'
-                          : 'bg-[#DFD0B8] text-[#222831] hover:bg-[#948979]'
-                      }`}
-                    >
-                      {i + 1}
-                    </button>
-                  ))}
-                </div>
-              </div>
+      {/* 페이지네이션 */}
+      {totalPages > 1 && (
+        <div className="flex justify-center items-center mt-8 mb-8">
+          <div className="flex space-x-2">
+            {page > 1 && (
+              <button 
+                onClick={() => setPage(page - 1)}
+                className="px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-100"
+              >
+                이전
+              </button>
+            )}
+            
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
+              <button
+                key={p}
+                onClick={() => setPage(p)}
+                className={`w-10 h-10 rounded-md ${
+                  p === page 
+                    ? 'bg-[#222831] text-white font-bold' 
+                    : 'border border-gray-300 hover:bg-gray-100'
+                }`}
+              >
+                {p}
+              </button>
+            ))}
+            
+            {page < totalPages && (
+              <button 
+                onClick={() => setPage(page + 1)}
+                className="px-4 py-2 rounded-md border border-gray-300 hover:bg-gray-100"
+              >
+                다음
+              </button>
             )}
           </div>
         </div>
-      </section>
+      )}
       
+      <div className="h-20"></div>
+
       {/* 카테고리 관리 모달 */}
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">

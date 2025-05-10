@@ -2,6 +2,7 @@
 import { useEffect, useState } from 'react'
 import { useParams, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import CustomerCenterHeader from '../../../components/CustomerCenterHeader'
 
 interface Notice {
   id: number
@@ -32,11 +33,7 @@ export default function NoticeDetailPage() {
 
   return (
     <div className="bg-gray-50 min-h-screen py-0">
-      {/* 상단 타이틀 */}
-      <div className="text-center pt-36 pb-2">
-        <h1 className="text-4xl font-bold text-gray-900 mb-2">공지사항</h1>
-        <p className="text-gray-500 text-lg">새로운 소식을 알려드립니다.</p>
-      </div>
+      <CustomerCenterHeader activeTab="notice" />
       {/* 카드형 본문 */}
       <div className="mx-auto mt-10 mb-16" style={{ maxWidth: '1100px' }}>
         <div className="bg-white rounded-xl shadow p-0 border">

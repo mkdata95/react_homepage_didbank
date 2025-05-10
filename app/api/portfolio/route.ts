@@ -15,6 +15,7 @@ interface PortfolioItem {
   image: string;
   category: string;
   gallery?: string; // 갤러리 데이터 (JSON 문자열로 저장)
+  size: string;
 }
 
 // SQLite 테이블 컬럼 정보 인터페이스
@@ -51,7 +52,8 @@ async function ensureTable() {
     details TEXT,
     client TEXT,
     image TEXT,
-    category TEXT
+    category TEXT,
+    size TEXT
   )`)
   
   // 테이블 구조 확인
@@ -125,7 +127,7 @@ export async function POST(req: NextRequest) {
   const galleryData = body.gallery ? JSON.stringify(body.gallery) : null;
   
   await db.run(
-    'INSERT INTO portfolio (id, title, period, role, overview, details, client, image, category, gallery) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    'INSERT INTO portfolio (id, title, period, role, overview, details, client, image, category, gallery, size) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
     id,
     body.title,
     body.period,
@@ -135,7 +137,8 @@ export async function POST(req: NextRequest) {
     body.client,
     body.image,
     body.category,
-    galleryData
+    galleryData,
+    body.size
   )
   await db.close()
   return NextResponse.json({ id })
@@ -156,7 +159,7 @@ export async function PUT(req: NextRequest) {
   const galleryData = body.gallery ? JSON.stringify(body.gallery) : null;
   
   await db.run(
-    'UPDATE portfolio SET title=?, period=?, role=?, overview=?, details=?, client=?, image=?, category=?, gallery=? WHERE id=?',
+    'UPDATE portfolio SET title=?, period=?, role=?, overview=?, details=?, client=?, image=?, category=?, gallery=?, size=? WHERE id=?',
     body.title,
     body.period,
     body.role,
@@ -166,6 +169,7 @@ export async function PUT(req: NextRequest) {
     body.image,
     body.category,
     galleryData,
+    body.size,
     body.id
   )
   await db.close()

@@ -1,6 +1,7 @@
 "use client"
 import Link from 'next/link'
 import { useEffect, useState } from 'react'
+import CustomerCenterHeader from '../../components/CustomerCenterHeader'
 
 interface Notice {
   id: number
@@ -29,29 +30,7 @@ export default function NoticePage() {
 
   return (
     <div className="bg-gray-50 min-h-screen">
-      {/* 상단 비주얼 */}
-      <div className="relative h-64 bg-black mt-16">
-        <img src="/images/visual.jpg" className="w-full h-full object-cover opacity-60" alt="고객센터 비주얼" />
-        <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <h1 className="text-4xl md:text-5xl text-white font-bold mb-2">고객센터</h1>
-        </div>
-      </div>
-      {/* 2차 메뉴 */}
-      <div className="bg-white border-b">
-        <div className="container mx-auto flex gap-4 py-4 px-2" style={{ maxWidth: '1100px' }}>
-          <button className="font-bold border-b-2 border-black px-4">공지사항</button>
-          <Link href="/contact" className="text-gray-500 px-4">문의하기</Link>
-          <Link href="/location" className="text-gray-500 px-4">오시는길</Link>
-        </div>
-      </div>
-      {/* 경로 네비게이션 */}
-      <div className="container mx-auto text-sm text-gray-400 py-2 px-2 flex gap-2 items-center" style={{ maxWidth: '1100px' }}>
-        <span>홈</span>
-        <span className="mx-1">/</span>
-        <span>고객센터</span>
-        <span className="mx-1">/</span>
-        <span className="text-black">공지사항</span>
-      </div>
+      <CustomerCenterHeader activeTab="notice" />
       {/* 공지사항 리스트 */}
       <div className="container mx-auto py-8 px-2" style={{ maxWidth: '1100px' }}>
         <div className="flex flex-col md:flex-row md:justify-between md:items-center mb-4 gap-2">
@@ -60,42 +39,44 @@ export default function NoticePage() {
             <Link href="/customer/notice/write" className="bg-blue-600 text-white px-4 py-2 rounded font-bold">글쓰기</Link>
           )}
         </div>
-        <div className="overflow-x-auto bg-white rounded-xl shadow">
-          <table className="w-full text-center text-sm">
+        <div className="overflow-x-auto bg-white rounded-none shadow border border-gray-300">
+          <table className="w-full text-center text-sm border-collapse">
             <thead>
-              <tr className="bg-gray-100">
-                <th className="p-2">번호</th>
-                <th className="p-2">제목</th>
-                <th className="p-2">작성자</th>
-                <th className="p-2">조회</th>
-                <th className="p-2">날짜</th>
-                <th className="p-2">관리</th>
+              <tr className="bg-gray-100 border-b border-gray-300">
+                <th className="p-3 font-bold text-gray-900 border-r border-gray-200">번호</th>
+                <th className="p-3 font-bold text-gray-900 border-r border-gray-200">제목</th>
+                <th className="p-3 font-bold text-gray-900 border-r border-gray-200">작성자</th>
+                <th className="p-3 font-bold text-gray-900 border-r border-gray-200">조회</th>
+                <th className="p-3 font-bold text-gray-900 border-r border-gray-200">날짜</th>
+                {isAdmin && (
+                  <th className="p-3 font-bold text-gray-900">관리</th>
+                )}
               </tr>
             </thead>
             <tbody>
               {notices.map((notice, idx) => (
-                <tr key={notice.id}>
-                  <td className="p-2">{notice.id}</td>
-                  <td className="p-2 text-left">
-                    <Link href={`/customer/notice/${notice.id}`} className="text-blue-700 hover:underline">
-                      {notice.title}
-                    </Link>
+                <tr key={notice.id} className="border-b border-gray-200 hover:bg-blue-50 transition">
+                  <td className="p-2 font-medium text-gray-800 border-r border-gray-100">{notice.id}</td>
+                  <td className="p-2 text-left text-blue-700 font-semibold underline cursor-pointer border-r border-gray-100">
+                    <Link href={`/customer/notice/${notice.id}`}>{notice.title}</Link>
                   </td>
-                  <td className="p-2">{notice.author}</td>
-                  <td className="p-2">{notice.views}</td>
-                  <td className="p-2">{notice.date?.slice(0, 10)}</td>
-                  <td className="p-2 flex gap-2 justify-center">
-                    <Link href={`/customer/notice/edit/${notice.id}`} className="text-xs text-white bg-gray-500 rounded px-2 py-1">수정</Link>
-                    <button
-                      className="text-xs text-white bg-red-500 rounded px-2 py-1"
-                      onClick={async () => {
-                        if (confirm('정말 삭제하시겠습니까?')) {
-                          await fetch(`/api/notice/${notice.id}`, { method: 'DELETE' })
-                          setNotices(notices.filter(n => n.id !== notice.id))
-                        }
-                      }}
-                    >삭제</button>
-                  </td>
+                  <td className="p-2 text-gray-700 border-r border-gray-100">{notice.author}</td>
+                  <td className="p-2 text-gray-700 border-r border-gray-100">{notice.views}</td>
+                  <td className="p-2 text-gray-700 border-r border-gray-100">{notice.date?.slice(0, 10)}</td>
+                  {isAdmin && (
+                    <td className="p-2 flex gap-2 justify-center">
+                      <Link href={`/customer/notice/edit/${notice.id}`} className="text-xs text-white bg-gray-800 rounded-none font-bold px-3 py-1 hover:bg-black transition">수정</Link>
+                      <button
+                        className="text-xs text-white bg-red-600 rounded-none font-bold px-3 py-1 hover:bg-red-700 transition"
+                        onClick={async () => {
+                          if (confirm('정말 삭제하시겠습니까?')) {
+                            await fetch(`/api/notice/${notice.id}`, { method: 'DELETE' })
+                            setNotices(notices.filter(n => n.id !== notice.id))
+                          }
+                        }}
+                      >삭제</button>
+                    </td>
+                  )}
                 </tr>
               ))}
             </tbody>
